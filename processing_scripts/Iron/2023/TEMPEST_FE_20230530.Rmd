@@ -1,0 +1,417 @@
+---
+title: "COMPASS_FE_20230530"
+author: "Stephanie J. Wilson"
+date: '2023-05-30'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+setwd("S:/Biogeochemistry/People/Wilson (Steph)/Data/MicroPlate Data/Iron/2023/TEMPEST")
+
+
+library(dplyr)
+library(ggplot2)
+library(data.table)
+library(stringr)
+library(plater)
+```
+
+## R Markdown
+
+#notes I don't have a system yet to compare old slopes to current slopes for that day 
+#I don't have a system for eliminating wells if the sd is high - if you think one of your sample wells was off you would need to remove it manually... 
+
+#Files Required: 
+#csv of standards see template
+#csv of samples see template
+
+
+## Read in Standards and subset 
+```{r}
+setwd("S:/Biogeochemistry/People/Wilson (Steph)/Data/MicroPlate Data/Iron/2023/TEMPEST")
+
+stds <- read_plate(
+  file = "TEMPEST_FE_20230530_Stds1.csv",             # full path to the .csv file
+  well_ids_column = "Wells",    # name to give column of well IDs (optional)
+  sep = ","                     # separator used in the csv file (optional)
+)
+str(stds)
+head(stds)
+
+#subset by FE_2 and FE_Total
+FE_2_stds <- stds %>%  
+  filter(str_detect(stds$IDs, "Fe_2|Blank"))  
+head(FE_2_stds)
+
+#subset by FE_2 and FE_Total
+FE_Tot_stds <- stds %>%  
+  filter(str_detect(IDs, "Fe_3|Blank"))  
+head(FE_Tot_stds)
+
+#Subset the low standard curve from all 
+FE_2_stds_low <- FE_2_stds[!(FE_2_stds$Conc_uM > 60),]
+FE_Tot_stds_low <- FE_Tot_stds[!(FE_Tot_stds$Conc_uM > 60),]
+
+
+```
+
+## Plot standards 
+```{r}
+#Plot each of these and calculate the slope, intercept, and R2 
+library(ggplot2)
+
+#Low curve for Fe(II)
+FE_2_Low <- ggplot(FE_2_stds_low, aes(Conc_uM, Abs1)) + geom_point() + geom_smooth(method = "lm", se = FALSE)
+FE_2_Low
+
+FE_2_Low_lm <- lm(FE_2_stds_low$Abs1 ~ FE_2_stds_low$Conc_uM)
+summary(FE_2_Low_lm)
+cf <- coef(FE_2_Low_lm)
+
+#create data frame with 1 rows and 0 columns
+Slopes1 <- data.frame(matrix(ncol = 0, nrow = 1))
+Slopes1$Curve <- "FE_2_Low"
+Slopes1$R2 <- summary(FE_2_Low_lm)$adj.r.squared
+Slopes1$Slope <- cf[2]
+Slopes1$Intercept <- cf[1]
+head(Slopes1)
+
+
+#High curve for Fe(III)
+FE_2_High <- ggplot(FE_2_stds, aes(Conc_uM, Abs1)) + geom_point() + geom_smooth(method = "lm", se = FALSE)
+FE_2_High
+
+FE_2_High_lm <- lm(FE_2_stds$Abs1 ~ FE_2_stds$Conc_uM)
+summary(FE_2_High_lm)
+cf <- coef(FE_2_High_lm)
+
+#create data frame with 1 rows and 0 columns
+Slopes2 <- data.frame(matrix(ncol = 0, nrow = 1))
+Slopes2$Curve <- "FE_2_High"
+Slopes2$R2 <- summary(FE_2_High_lm)$adj.r.squared
+Slopes2$Slope <- cf[2]
+Slopes2$Intercept <- cf[1]
+head(Slopes2)
+
+
+#Low curve for Fe(Total)
+FE_Tot_Low <- ggplot(FE_2_stds_low, aes(Conc_uM, Abs2)) + geom_point() + geom_smooth(method = "lm", se = FALSE)
+FE_Tot_Low
+
+FE_Tot_Low_lm <- lm(FE_2_stds_low$Abs2 ~ FE_2_stds_low$Conc_uM)
+summary(FE_Tot_Low_lm)
+cf <- coef(FE_Tot_Low_lm)
+
+#create data frame with 1 rows and 0 columns
+Slopes3 <- data.frame(matrix(ncol = 0, nrow = 1))
+Slopes3$Curve <- "FE_Tot_Low"
+Slopes3$R2 <- summary(FE_Tot_Low_lm)$adj.r.squared
+Slopes3$Slope <- cf[2]
+Slopes3$Intercept <- cf[1]
+head(Slopes3)
+
+
+#High curve for Fe(III)
+FE_Tot_High <- ggplot(FE_Tot_stds, aes(Conc_uM, Abs2)) + geom_point() + geom_smooth(method = "lm", se = FALSE)
+FE_Tot_High
+
+FE_Tot_High_lm <- lm(FE_Tot_stds$Abs2 ~ FE_Tot_stds$Conc_uM)
+summary(FE_Tot_High_lm)
+cf <- coef(FE_Tot_High_lm)
+
+#create data frame with 1 rows and 0 columns
+Slopes4 <- data.frame(matrix(ncol = 0, nrow = 1))
+Slopes4$Curve <- "FE_Tot_High"
+Slopes4$R2 <- summary(FE_Tot_High_lm)$adj.r.squared
+Slopes4$Slope <- cf[2]
+Slopes4$Intercept <- cf[1]
+head(Slopes4)
+
+
+#pull all the slopes together into one dataframe 
+Slopes <- rbind(Slopes1, Slopes2, Slopes3, Slopes4)
+head(Slopes)
+
+####
+```
+
+## Calculate Reduction Efficiency 
+```{r}
+#pull out Fe_2 and Fe_3 standards at 60uM to check reduction efficiency
+
+#subset by FE_2 and FE_Total
+FE_2_60uM <- stds %>%  
+  filter(str_detect(stds$IDs, "Fe_2 60uM"))  
+head(FE_2_60uM)
+
+#subset by FE_2 and FE_Total
+FE_3_60 <- stds %>%  
+  filter(str_detect(IDs, "Fe_3 60 uM"))  
+head(FE_3_60)
+
+
+#create data frame with 0 rows and 3 columns
+Fe_Red_eff <- data.frame(matrix(ncol = 0, nrow = 3))
+
+Fe_Red_eff$ID <- seq.int(nrow(Fe_Red_eff))
+Fe_Red_eff$FE2 <- (FE_2_60uM$Abs1)
+Fe_Red_eff$FE3 <- FE_3_60$Abs2
+Fe_Red_eff$Eff <- ((Fe_Red_eff$FE3)/Fe_Red_eff$FE2)*100
+Fe_Red_eff$Eff1 <- ((Fe_Red_eff$FE3/0.8)/Fe_Red_eff$FE2)*100 #this one accounts for dilution of the reegents 
+head(Fe_Red_eff)
+
+#plot spk recoveries output as a bar graph to easily check - want any over 10% to be red need to work on this 
+redeffbar <- ggplot(data = Fe_Red_eff, aes(x = ID, y = Eff)) +
+        geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c("gray48")) + 
+        theme_classic() + labs(x= "Sample ID", y="Reduction Efficiency (%)") + 
+        theme(legend.position="none") +  
+        geom_hline(yintercept=85, linetype="dashed", color = "black", size=1) + 
+        geom_hline(yintercept=120, linetype="dashed", color = "black", size=1)
+
+redeffbar
+
+```
+
+
+## Read in Sample Data subset 
+```{r}
+setwd("S:/Biogeochemistry/People/Wilson (Steph)/Data/MicroPlate Data/Iron/2023/TEMPEST")
+
+dat <- read_plate(
+  file = "TEMPEST_FE_20230530_Samples1.csv",             # full path to the .csv file
+  well_ids_column = "Wells",    # name to give column of well IDs (optional)
+  sep = ","                     # separator used in the csv file (optional)
+)
+str(dat)
+head(dat)
+
+## remove any lines that say stds in IDs
+library(dplyr)
+
+dat <- dat %>%  filter(!IDs =='stds') %>%  filter(!IDs =='Stds')
+head(dat)
+
+#Now flag any Abs1 that are above the 60uM standard absorbance (0.2)
+dat$FE_2_Curve <- ifelse(dat$Abs1 >0.2, "High", "Low")
+head(dat)
+
+#Now flag any Abs2 that are above the 60uM standard absorbance (0.3)
+dat$FE_Tot_Curve <- ifelse(dat$Abs2 >0.3, "High", "Low")
+head(dat)
+
+
+```
+
+
+## Subset Data and Calculate Concentrations 
+```{r}
+#Calculate concentrations of Fe(II)
+dat$FE_2_Conc <- ifelse(dat$Abs1 >0.2, (dat$Abs1-Slopes2$Intercept)/Slopes2$Slope, (dat$Abs1-Slopes1$Intercept)/Slopes1$Slope )
+head(dat)
+
+#calculate concentrations of Fe(total)
+dat$FE_Tot_Conc <- ifelse(dat$Abs2 >0.3, (dat$Abs2-Slopes4$Intercept)/Slopes4$Slope,                                       (dat$Abs2-Slopes3$Intercept)/Slopes3$Slope )
+head(dat)
+
+
+#Account for the dilution factor
+dat$FE_2_Conc_DilCorr <- dat$FE_2_Conc*dat$Dilutions
+
+dat$FE_Tot_Conc_DilCorr <- dat$FE_Tot_Conc*dat$Dilutions
+
+head(dat)
+```
+
+
+## Calculate Fe(III) 
+```{r}
+#Calculate concentrations of Fe(III)
+dat$FE_3_Conc <- dat$FE_Tot_Conc_DilCorr-dat$FE_2_Conc_DilCorr
+
+#Use ifelse to make any negative values equal to zero 
+dat$FE_2_Conc_Final <- ifelse(dat$FE_2_Conc_DilCorr <0, 0, dat$FE_2_Conc_DilCorr)
+
+dat$FE_3_Conc_Final <- ifelse(dat$FE_3_Conc <0, 0, dat$FE_3_Conc)
+
+#Use ifelse to make any negative values equal to zero 
+dat$FE_2_Info <- ifelse(dat$FE_2_Conc_DilCorr <0, 'bdl', 'within range')
+
+#Use ifelse to make any negative values equal to zero 
+dat$FE_3_Info <- ifelse(dat$FE_3_Conc <0, 'bdl', 'within range')
+
+head(dat)
+```
+
+
+## Calculate Averages across wells and std. dev.  
+```{r}
+head(dat)
+
+#summarize by sampleID so that we can calculate the mean and std. dev. of the three wells 
+dat1 <- dat %>%
+  group_by(IDs) %>%
+  summarise(FE_2_mean = mean(FE_2_Conc_Final), FE_2_sd = sd(FE_2_Conc_Final), 
+            FE_3_mean = mean(FE_3_Conc_Final), FE_3_sd = sd(FE_3_Conc_Final), 
+            FE_2_flag = first(FE_2_Info), FE_3_flag = first(FE_3_Info), 
+            Dilution = first(Dilutions))
+
+head(dat1)
+
+#plot data and sd's just to check and see what they look like - just a quick first look 
+Fe2 <- ggplot(dat1, aes(x=IDs, y=FE_2_mean))+ 
+  geom_point(size=4) +  theme_classic() + 
+  labs(y="Fe(II) (uM)", x="Sample ID") + 
+  geom_errorbar(aes(ymin=FE_2_mean-FE_2_sd,
+                    ymax=FE_2_mean+FE_2_sd),width=0.3,position=position_dodge(.1))
+Fe2
+
+Fe3 <- ggplot(dat1, aes(x=IDs, y=FE_3_mean))+ 
+  geom_point(size=4) +  theme_classic() + 
+  labs(y="Fe(III) (uM)", x="Sample ID") + 
+  geom_errorbar(aes(ymin=FE_3_mean-FE_3_sd,
+                    ymax=FE_3_mean+FE_3_sd),width=0.3,position=position_dodge(.1))
+Fe3
+
+```
+
+
+## Check the dups for QAQC - Should be below 10%  
+```{r}
+
+#Show me the data that we have from the calculations 
+head(dat1)
+
+#pull out any rows that have "d" in the SampleID column
+dups <- dat1 %>%  
+  filter(str_detect(IDs, "_dup")) 
+head(dups)
+
+#remove these from dat1
+dat2 <- dat1 %>%  
+  filter(!str_detect(IDs, "_dup")) %>%  
+  filter(!str_detect(IDs, "_spk")) 
+head(dat2)
+
+#remove the d from these IDs so we will have duplicates 
+dups$IDs<-gsub("_dup","",as.character(dups$IDs))
+dups <- dups[ ,-c(3,5,6,7,8)]
+head(dups)
+colnames(dups) <- c('IDs', 'FE_2_mean_dup', "FE_3_mean_dup")
+
+
+#put it back together with the old data set and look for duplicates 
+QAdups <- merge(dat2, dups)
+head(QAdups)
+
+QAdups$FE_2_dups_chk <- ((abs(QAdups$FE_2_mean-QAdups$FE_2_mean_dup))/((QAdups$FE_2_mean+QAdups$FE_2_mean_dup)/2))*100
+QAdups$FE_2_dups_flag <-  ifelse(QAdups$FE_2_dups_chk <15.5, 'YES', 'NO, rerun')
+
+head(QAdups)
+
+#plot dups output as a bar graph to easily check - want any over 10% to be red need to work on this 
+dupsbar <- ggplot(data = QAdups, aes(x = IDs, y = FE_2_dups_chk, fill=FE_2_dups_chk)) +
+       geom_bar(stat = 'identity') + 
+        scale_fill_gradient2(low='darkgreen', mid='darkgreen', high='darkgrey', space='Lab') + 
+        theme_classic() + labs(x= "Sample ID", y="Difference Between Duplicates (%)") + 
+        theme(legend.position="none") +  geom_hline(yintercept=10, linetype="dashed", 
+                color = "black", size=1)
+
+dupsbar
+
+#check for any no's that would warrant reruns 
+```
+
+
+## Check the spks for QAQC (should be between 100-120%) - PLZ DISREGARD SPKS - WORKING THIS OUT
+```{r}
+
+#Show me the data that we have from the calculations 
+head(dat1)
+
+#pull out any rows that have "d" in the SampleID column
+spks <- dat1 %>%  
+  filter(str_detect(IDs, "_spk")) 
+head(spks)
+
+#remove these from dat1
+dat2 <- dat1 %>%  
+  filter(!str_detect(IDs, "_dup")) %>%  
+  filter(!str_detect(IDs, "_spk")) 
+head(dat2)
+
+#remove the d from these IDs so we will have duplicates 
+spks$IDs<-gsub("_spk","",as.character(spks$IDs))
+spks <- spks[ ,-c(3:8)]
+head(spks)
+colnames(spks) <- c('IDs', 'FE_2_mean_spk')
+
+
+#put it back together with the old data set and look for duplicates 
+QAspks <- merge(dat2, spks)
+head(QAspks)
+
+#now we need to calculate the spike concentration and calculate the spike recovery 
+#spike for these samples was 55uL of the 60uM standard
+QAspks$FE_2_spk_Conc <- (60*(55/1000000))                        # this would be in umoles of FE in the spk 
+QAspks$FE_Total_unspkd <- (QAspks$FE_2_mean/QAspks$Dilution)*(160/1000000) #gives us the total fe in the sample in umoles
+QAspks$FE_Total_spkd <-    (QAspks$FE_2_mean_spk/QAspks$Dilution)*((160+55)/1000000)        ##total fe in spiked sample in umoles 
+QAspks$FE_expctd_spkd <-  (QAspks$FE_Total_unspkd + QAspks$FE_2_spk_Conc)
+QAspks$spk_recovery <-    (QAspks$FE_Total_spkd/QAspks$FE_expctd_spkd)*100
+QAspks$FE_spks_flag <-  ifelse(QAspks$spk_recovery >80, 'YES', 'NO, rerun')  #fix 
+
+head(QAspks)
+
+#plot spk recoveries output as a bar graph to easily check - want any over 10% to be red need to work on this 
+spksbar <- ggplot(data = QAspks, aes(x = IDs, y = spk_recovery)) +
+        geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c("gray48")) + 
+        theme_classic() + labs(x= "Sample ID", y="Spike Recovery (%)") + 
+        theme(legend.position="none") +  
+        geom_hline(yintercept=80, linetype="dashed", color = "black", size=1) + 
+        geom_hline(yintercept=120, linetype="dashed", color = "black", size=1)
+
+spksbar
+
+#check for any no's that would warrant reruns! 
+```
+
+
+
+## Export full data then just final data 
+```{r}
+
+#Read in meta-data and sample IDs
+#IDs <- read.csv("FE_SampleIDs_2022.csv")
+#IDs$SampleID <- as.character(IDs$SampleID)
+#head(IDs)
+
+#head(dat1)
+#dat_IDs <- merge(IDs, dat1, all=FALSE)
+dat_IDs <- dat1
+
+#Read out the summarized data
+head(dat_IDs)
+write.csv(dat_IDs, file="TEMPEST_FE_20230530_Summary_Data.csv")
+
+#Read out all the data in dat 
+head(dat)
+write.csv(dat, file="TEMPEST_FE_20230110_Data.csv")
+
+#Now take out the absorbance and stuff 
+head(dat)
+dat2 <- dat[ ,-(1:3)]
+dat2 <- dat2[ ,-(2:9)]
+head(dat2)
+write.csv(dat2, file="TEMPEST_FE_20230110_short_Data.csv")
+
+```
+
+### END
+
+
+

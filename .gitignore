@@ -47,3 +47,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+processing_scripts/.DS_Store
+processing_scripts/Iron/.DS_Store
+processing_scripts/Nutrients/.DS_Store
