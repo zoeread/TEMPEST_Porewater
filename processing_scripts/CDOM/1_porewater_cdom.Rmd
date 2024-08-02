@@ -368,6 +368,9 @@ PW_eems_allwpooled <- eems_all_meta_dups_merged %>%
   filter(grid != "BARGE")
 ```
 
+# Save data
+
+make eval=FALSE if you are not writing the version of record of these files: 
 
 ## Save for manuscript
 
@@ -381,18 +384,19 @@ saveRDS(PW_eems_all, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_grids_C
 
 ## Write for Google Drive L1
 
-```{r write, eval=FALSE}
+```{r write}
 
 l1_porewatergrids_2022 = PW_eems_allwpooled  %>%
    filter(collection_datetime < year1_stop & collection_datetime > year1_start)
 
-write_csv(l1_porewatergrids_2022, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2022.csv")
+write_csv(l1_porewatergrids_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2022.csv")
 
 
 l1_porewatergrids_2023 = PW_eems_allwpooled  %>%
    filter(collection_datetime < year2_stop & collection_datetime > year2_start)
 
-write_csv(l1_porewatergrids_2023, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2023.csv")
+write_csv(l1_porewatergrids_2023, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2023.csv")
+
 
 ```
 

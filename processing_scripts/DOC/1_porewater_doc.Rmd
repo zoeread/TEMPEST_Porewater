@@ -677,13 +677,16 @@ saveRDS(for_fluxes, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_GRIDSONL
 l1_porewater_2022 = for_fluxes %>%
    filter(collection_datetime < year1_stop & collection_datetime > year1_start)
 
-write_csv(l1_porewater_2022, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_GRIDSONLY_NPOC_TDN_L1_2022.csv")
+write_csv(l1_porewater_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSONLY_NPOC_TDN_L1_2022.csv")
 
+write_csv(l1_porewater_2022, "~/GitHub/TEMPEST_Porewater/processing_scripts/DOC/TEMPORARY/TMP_PW_GRIDSONLY_NPOC_TDN_L1_2022.csv")
 
 l1_porewater_2023 = for_fluxes %>%
    filter(collection_datetime < year2_stop & collection_datetime > year2_start)
 
-write_csv(l1_porewater_2023, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_GRIDSONLY_NPOC_TDN_L1_2023.csv")
+write_csv(l1_porewater_2023, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSONLY_NPOC_TDN_L1_2023.csv")
+write_csv(l1_porewater_2023, "~/GitHub/TEMPEST_Porewater/processing_scripts/DOC/TEMPORARY/TMP_PW_GRIDSONLY_NPOC_TDN_L1_2023.csv")
+
 
 ```
 
