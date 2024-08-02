@@ -1,0 +1,144 @@
+---
+title: "VWC and Lysimeter Volumes"
+author: "AMP"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(pacman)
+pacman::p_load(tidyverse, # keep things tidy
+               googlesheets4, # read_sheet 
+               googledrive, # drive_ functions
+               here,
+               lubridate) 
+getwd()
+
+directory= file.path(here() %>% dirname(), 'TEMPEST_Porewater/processing_scripts/VWC_LysimeterVol_Comparison')
+
+#Authenticate Google Drive Access:
+drive_auth()
+
+```
+
+### Import Lysimeter Volumes, VWC, and do some inital data cleaning
+
+```{r import data}
+inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
+
+file_path = file.path(directory,"porewaterinventory.xlsx")
+
+drive_download(inventory_directory, path= file_path, overwrite = TRUE)
+
+pooled_vols <- readxl::read_excel(file_path, skip=4, sheet="Pooled") %>%
+  select(Sample_ID, Total_Volume_mL, Grid_C3:Grid_I5, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD) %>%
+  mutate(across(starts_with("Grid"), ~ ifelse(is.na(.),0,.))) %>%
+  mutate(Plot = stringr::str_extract(Sample_ID, 'FW|SW|C')) %>%
+   pivot_longer(cols = c("Grid_C3", "Grid_C6", "Grid_F4", "Grid_H3", "Grid_H6", "Grid_B4", "Grid_D5", "Grid_E3", "Grid_F6", "Grid_I5"),
+    names_to = "grid",
+    values_to = "Volume_mL") %>%
+   mutate(plot = case_when(Plot == "C" ~ "Control",
+                          Plot == "SW" ~ "Estuarine-water",
+                          Plot == "FW" ~ "Freshwater",
+                          TRUE ~ Plot),
+          grid = str_remove(grid, "Grid_")) %>%
+  rename(evacuation_date = Evacuation_date_YYYMMDD,
+         collection_date = Collection_Date_YYYYMMDD) %>%
+  mutate(evacuation_date = lubridate::as_date(as.character(evacuation_date), format = "%Y%m%d"),
+         collection_date = lubridate::as_date(as.character(collection_date), format = "%Y%m%d"),
+         date = stringr::str_extract(Sample_ID, "[0-9]{8}")) %>%
+  mutate(date = lubridate::as_date(date, format = "%Y%m%d")) %>%
+  group_by(date) %>%
+  fill(evacuation_date, collection_date) %>%
+  #Empty dates for the event dates, those are when collection and evacuation are usually the same date: 
+  mutate(collection_date = case_when(is.na(collection_date) ~ date,
+                                     TRUE ~ collection_date),
+         evacuation_date = case_when(is.na(evacuation_date) ~ date,
+                                     TRUE ~ evacuation_date)) %>%
+  select(Sample_ID,plot, grid, Volume_mL, evacuation_date, collection_date) %>%
+  filter(Volume_mL > 0)
+
+lysimeter_vols = readxl::read_excel(file_path, skip=3, sheet="Individual") %>%
+  select(Sample_ID, Plot, Volume_mL, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_Start_Time_24hrs, Collection_End_Time_24hrs, EST_EDT) %>%
+    rename(evacuation_date = Evacuation_date_YYYMMDD,
+         collection_date = Collection_Date_YYYYMMDD) %>%
+  mutate(evacuation_date = lubridate::as_date(as.character(evacuation_date), format = "%Y%m%d"),
+         collection_date = lubridate::as_date(as.character(collection_date), format = "%Y%m%d"),
+         elapsed_time = lubridate::days(collection_date - evacuation_date)) %>%
+  mutate(grid = stringr::str_extract(Sample_ID, "B4|C3|C6|D5|E3|F4|F6|H3|H6|I5")) %>%
+    mutate(plot = case_when(Plot == "Contol" ~ "Control",
+                          Plot == "Seawater" ~ "Estuarine-water",
+                          TRUE ~ Plot)) %>%
+  full_join(pooled_vols, by = join_by(Sample_ID, Volume_mL, evacuation_date, collection_date, grid, plot)) %>%
+  group_by(plot, grid, evacuation_date, collection_date) %>%
+  dplyr::summarise(grid_vols_mL = sum(Volume_mL)) %>%
+  ungroup() %>%
+  pivot_longer(cols = c(evacuation_date, collection_date),
+    names_to = "date_type",
+    values_to = "date")
+
+
+  
+vwc_l2 = readRDS("~/GitHub//TEMPEST-1-porewater/processed data/TMP_PW_L2_VWC_2022-2023.rds") %>%
+  filter(depth == "15") %>%
+  mutate(date = as_date(datetime_est)) %>%
+  group_by(plot, grid, date) %>%
+  dplyr::summarise(daily_mean_vwc_m3_m3 = mean(vwc_m3m3, na.rm = TRUE),
+                   daily_sd_vwc_m3_m3 = sd(vwc_m3m3, na.rm = TRUE))
+```
+
+```{r merge it }
+
+vwc_lysvols_merged <- vwc_l2 %>%
+  left_join(lysimeter_vols, by = c("plot", "grid", "date")) %>%
+  drop_na(grid_vols_mL)
+```
+
+```{r plot it}
+plot_order <- c('Control', 'Freshwater','Estuarine-water')
+Anyas_colors_alpha_order = c("springgreen2", "violetred2", "cyan2")
+
+# Filter to evacuation dates, and by grid 
+vwc_lysvols_merged %>%
+  filter(date_type == "evacuation_date") %>%
+  ggplot(aes(x= daily_mean_vwc_m3_m3 , y = grid_vols_mL, color = grid)) +
+  geom_smooth(method= "lm", color = "black") +
+  geom_point() +
+  geom_pointrange(aes(xmin=daily_mean_vwc_m3_m3-daily_sd_vwc_m3_m3, xmax=daily_mean_vwc_m3_m3+daily_sd_vwc_m3_m3)) +
+  facet_wrap(~factor(plot, level= plot_order), nrow = 1,
+             labeller = label_wrap_gen(10))
+
+# Filter to evacuation dates, by time
+vwc_lysvols_merged %>%
+  filter(date_type == "evacuation_date") %>%
+  ggplot(aes(x= daily_mean_vwc_m3_m3 , y = grid_vols_mL, color = date)) +
+  geom_smooth(method= "lm", color = "black") +
+  geom_point() +
+  geom_pointrange(aes(xmin=daily_mean_vwc_m3_m3-daily_sd_vwc_m3_m3, xmax=daily_mean_vwc_m3_m3+daily_sd_vwc_m3_m3)) +
+  facet_wrap(~factor(plot, level= plot_order), nrow = 1,
+             labeller = label_wrap_gen(10))
+
+# Filter to collection dates, and by grid 
+vwc_lysvols_merged %>%
+  filter(date_type == "collection_date") %>%
+  ggplot(aes(x= daily_mean_vwc_m3_m3 , y = grid_vols_mL, color = grid)) +
+  geom_smooth(method= "lm", color = "black") +
+  geom_point() +
+  geom_pointrange(aes(xmin=daily_mean_vwc_m3_m3-daily_sd_vwc_m3_m3, xmax=daily_mean_vwc_m3_m3+daily_sd_vwc_m3_m3)) +
+  facet_wrap(~factor(plot, level= plot_order), nrow = 1,
+             labeller = label_wrap_gen(10))
+
+#look at one grid at a time? 
+vwc_lysvols_merged %>%
+  filter(date_type == "evacuation_date") %>%
+  ggplot(aes(x= daily_mean_vwc_m3_m3 , y = grid_vols_mL, color = plot)) +
+  geom_smooth(method= "lm", color = "black") +
+  geom_point() +
+  geom_pointrange(aes(xmin=daily_mean_vwc_m3_m3-daily_sd_vwc_m3_m3, xmax=daily_mean_vwc_m3_m3+daily_sd_vwc_m3_m3)) +
+    scale_color_manual(values=Anyas_colors_alpha_order) +
+  facet_wrap(~factor(grid), nrow = 2,
+             labeller = label_wrap_gen(10))
+```
+No clear trends here, need to think about this a little bit more. Seems like each lysimeter is acting a bit differently, and maybe also differently over time. 
