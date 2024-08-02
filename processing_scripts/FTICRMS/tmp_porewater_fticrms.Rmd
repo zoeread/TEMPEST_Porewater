@@ -1,0 +1,427 @@
+---
+title: "TEMPEST Porewater FTICRMS Processing"
+author: "AMP"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+Notes from EMSL:
+
+Two of the supplicate runs were much lower than the original run. I would discard these r2 data files.
+
+- EUP_60602_TMP_C_POOL_T4_r2_25Sep23_Fir_450SA
+- EUP_60602_TMP_SW_SOURCE_HR2_r2_25Sep23_Fir_450SA
+
+- Peak assignments for CHOS, CHOP, and CHON in certain areas of the formularity output have been recommended to be removed by EMSL staff
+- need to filter the mass error > 0.5 and < -0.5 
+
+
+These functions have been modified from the `fticrrr` package and workflow: 
+https://github.com/kaizadp/fticrrr
+
+
+
+## Setup Environment 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(googledrive)
+getwd()
+
+```
+
+
+## 1. Set input file paths 
+
+Local version file path... here read_csv("../TEMPEST-1-porewater/data_do_not_commit/fticrms/ReportforCOMPASS_Nov2023/xtra_COMPASS_60602_2023_Report.csv")
+
+However, best practice is for L0 data to be on google drive, so download it from there: 
+
+```{r step 1: Set input file paths} 
+
+REPORT_path = "https://drive.google.com/drive/folders/1hEmD6CnQlojRYug-3eMHpTFzzBso5-8c"
+
+import_data = function(directory){
+  
+  ## a. Create a list of files to download
+  files <- 
+    drive_ls(directory) %>% 
+    filter(grepl("xtra_COMPASS_60602_2023_Report.csv", name))
+  
+  ## b. Download files to local (don't worry, we'll delete em in a sec)
+  lapply(files$id, drive_download, overwrite = TRUE)
+  
+  dat <- read_csv(files$name)
+  
+  
+  ## c. pull a list of file names
+  ## then read all files and combine
+  # 
+  # filePaths <- files$id
+  # dat <- 
+  #   do.call(rbind, lapply(filePaths, function(path){
+  #     # then add a new column `source` to denote the file name
+  #     df <- read.csv(files$name)
+  #     #  df <- read.delim(path, skip = 2)
+  #     df[["source"]] <- rep(path, nrow(df))
+  #     df}))
+  # 
+  ## d. delete the temporary files
+  file.remove(c(files$name))  
+  
+  ## e. output
+  dat
+}
+```
+
+### 1b. Create sample metadata keys
+
+```{r step 1b: Sample keys}
+
+sample_list_1 <- readxl::read_excel("../TEMPEST-1-porewater/sample lists/Myers-Pigg_TEMPEST_FT_samplelist_Sept2023.xlsx") %>%
+  mutate(sample_name = stringr::str_replace(Sample_ID,"pooled","POOL"),
+         sample_name = stringr::str_replace(Sample_ID,"Source","SOURCE"),
+         sample_name = stringr::str_remove(sample_name, "_FW\\d{2}|_SW\\d{2}")) 
+
+sample_list = sample_list_1 %>%
+  select(sample_name)
+
+sample_key <- readRDS("~/GitHub/tempest-system-level-analysis/data/for processing/TMP_Event_June2022_META_PW_SOURCE_DateTime.rds") %>%
+  mutate(Grid = case_when(is.na(Grid) ~ "POOL",
+                          TRUE ~ Grid))
+  
+non_event_sample_key <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", skip=3, sheet="Individual") %>%
+  select(Sample_ID, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_End_Time_24hrs, EST_EDT) %>%
+  filter(str_detect(Sample_ID, "DOC")) %>%
+  rename(sample_name = Sample_ID,
+         evacuation_date = Evacuation_date_YYYMMDD,
+         collection_date = Collection_Date_YYYYMMDD,
+         time = Collection_End_Time_24hrs,
+         tz = EST_EDT) %>%
+  mutate(evacuation_date = lubridate::as_date(as.character(evacuation_date), format = "%Y%m%d"),
+         collection_date = lubridate::as_date(as.character(collection_date), format = "%Y%m%d"),
+         elapsed_time = lubridate::days(collection_date - evacuation_date)) %>%
+  select(sample_name, evacuation_date, collection_date, time, tz, elapsed_time)
+
+## add into here time points for pre and post sampling for gapfilling purposes later on
+estuary_key1 = tibble(Plot = "ESTUARY",
+                     Timepoint = "HR4", 
+                     date = "20220622", 
+                     time= "110000")
+
+estuary_key2 = tibble(Plot = "ESTUARY",
+                     Timepoint = "HR7", 
+                     date = "20220622", 
+                     time= "150000")
+
+sample_key_merging <- sample_key %>%
+  mutate(date = stringr::str_remove_all(Date, "-")) %>%
+  rename(time = Start_time) %>%
+  mutate(time = str_replace_all(time, ":", "")) %>%
+  select(Plot,Timepoint, date, time) %>%
+  bind_rows(estuary_key1,estuary_key2) %>%
+  mutate(time = str_replace(time, "^[0-9]{5}$", function(x) paste0("0",x)))
+
+non_event_sample_key_merging <- non_event_sample_key %>%
+  mutate(Plot = stringr::str_extract(sample_name, 'FW|SW|C|ESTUARY'), 
+         Grid = stringr::str_extract(sample_name, "B4|C3|C6|D5|E3|F4|F6|H3|H6|I5|SOURCE|ESTUARY|POOL|WELL"),
+         date = stringr::str_extract(sample_name, "[0-9]{8}"),
+         time = str_replace(time, "^[0-9]{3}$", function(x) paste0("0", x, "00")),
+         time = str_replace(time, "^[0-9]{4}$", function(x) paste0(x, "00"))
+         ) %>%
+  select(Plot, date, time, tz, evacuation_date, collection_date) %>%
+  group_by(Plot, date) %>%
+  arrange(time) %>% # Ensure time is ordered within each group
+  slice(1) %>% # Keep the first row within each group
+  ungroup()
+
+sample_list_allmeta <- sample_list %>%
+     mutate(sample_name = stringr::str_replace(sample_name,"pooled","POOL"),
+         Event = stringr::str_extract(sample_name, "TMP"),
+         Plot = stringr::str_extract(sample_name, 'FW|SW|C|ESTUARY'), 
+         Grid = stringr::str_extract(sample_name, "B4|C3|C6|D5|E3|F4|F6|H3|H6|I5|SOURCE|ESTUARY|POOL|WELL"),
+         Timepoint = stringr::str_extract(sample_name,"T[0-9]|HR[0-9]"),
+         Timepoint = case_when(Timepoint == "HR8" ~ "HR7", #change the estuary HR8 to HR7
+                                TRUE ~ Timepoint),
+         Pool_Timepoint = stringr::str_extract(sample_name,"[0-9]{8}_\\d{8}|[0-9]{8}-\\d{8}"),
+         #sample_name = stringr::str_remove(sample_name,"(?<=[0-9]{8})_\\d{8}|(?<=[0-9]{8})-\\d{8}"),
+         sample_name = stringr::str_remove(sample_name, "_FW\\d{2}|_SW\\d{2}")
+         ) %>%
+   mutate(Plot = case_when(Grid == "ESTUARY" ~ "ESTUARY",
+                        TRUE ~ Plot)) %>%
+  left_join(sample_key_merging, by = c("Plot","Timepoint")) %>%
+  mutate(date= case_when(is.na(date) ~ stringr::str_extract(sample_name, "[0-9]{8}"),
+                  TRUE ~ date)) %>%
+ left_join(non_event_sample_key_merging, by= c("Plot", "date"), suffix = c("", ".fill")) %>%
+  mutate(time = coalesce(time, time.fill)) %>%
+  select(-time.fill) %>%
+  mutate(date = lubridate::as_date(date, format = "%Y%m%d")) %>%
+  mutate(Timepoint = case_when(is.na(Timepoint) & date == "2022-07-18" ~ "T5",
+                             is.na(Timepoint) & date == "2022-07-21" ~ "T5",
+                             is.na(Timepoint) & date == "2022-06-15" ~ "T0",
+                                      TRUE ~ Timepoint)) %>%
+  mutate(time = case_when(is.na(time) ~ "115900", 
+                          TRUE ~ time)) %>% #if no time recorded in the metadata sheet, fill in with noon
+  mutate(time= strptime(time, format ="%H%M%S"),
+         time = strftime(time, "%H:%M:%S")) %>%
+    mutate(datetime = as.POSIXct(paste(date, time), format = "%Y-%m-%d %H:%M:%S"))
+
+
+```
+
+## 2. source the fticrr functions --------------------------------------------------------
+
+```{r step 2: source functions}
+
+source("../TEMPEST_Porewater/processing_scripts/FTICRMS/fticrrr_processing_scripts/a-functions_processing.R")
+
+```
+
+##  3. import and do first level cleaning of the raw data file
+
+need to filter the mass error > 0.5 and < -0.5 
+
+```{r step 3: import data}
+
+REPORT = import_data(REPORT_path) %>% bind_rows()
+
+# Remove the samples EMSL said to remove:
+
+report = REPORT %>% 
+  #remove the samples Rosey said to
+  select(-TMP_C_POOL_T4_r2_25S, -TMP_SW_SOURCE_HR2_r2_25S) %>%
+  #remove the emsl worked up columns at the end:
+  select(-(kmd:`cho-ind`), -...142, -class) %>%
+    filter(Error_ppm < 0.5 & Error_ppm > -0.5)
+
+# Trim mass range, remove isotope peaks, and remove unidentified molecular formula
+
+fticr_report = apply_filter_report(report)
+
+fticr_report
+```
+
+# 4. Create Sample Meadata
+This section creates FTICR metadata. It calculates various relevant indices (e.g. AImod, DBE, etc) and creates the molecular formula (e.g. C6H9O). 
+
+```{r step 4: create metadata}
+fticr_meta = make_fticr_meta(fticr_report)$meta2
+
+nrow(fticr_meta)
+
+```
+It also checks if you have the same formula assigned to multiple masses. If so, then you need to aggregate across the multiple masses. 
+
+```{r step 4b: check number formula and masses}
+
+#total number of reported masses: 
+
+mass_to_formula = make_fticr_meta(fticr_report)$meta_formula
+
+unique_masses <- mass_to_formula %>% select(Mass) %>%
+  distinct()
+
+nrow(unique_masses)
+
+# number of unique formula: 
+
+unique_formula <- mass_to_formula %>% select(formula) %>%
+  distinct()
+
+nrow(unique_formula)
+
+
+```
+
+If nrow(unique_masses) ≠ nrow(unique_formula) then you'll need to aggregate the data based on unique MFs at some point.
+
+## Step 5. Isolate sample and blank data and aggregate: 
+
+```{r step 5: isolate and aggregate data}
+
+# Remove all data but the Mass and Sample data 
+
+fticr_samples <- fticr_report %>%  
+  select(-c(C:Candidates))
+
+nrow(fticr_samples)
+
+# Merges sample data with filtered metadata. 
+fticr_samples_formula <- merge(x=mass_to_formula, y=fticr_samples, by="Mass", all.x=TRUE)
+
+nrow(fticr_samples_formula)
+
+# Reorder columns to put the molecular formula in the first column and remove columns other than the elemental formula and the sample data. 
+fticr_samples_all <- fticr_samples_formula %>%
+  select(formula,everything())
+
+nrow(fticr_samples_all)
+
+#aggregate function to remove and merge duplicate rows
+
+meta_agg <- aggregate(.~formula, data=mass_to_formula, mean) #aggregates metadata and takes the mean of duplicate rows with the same molecular formula. 
+
+#This ensures there are no changes in the metadata and only the merging of rows
+
+fticr_samples_agg <- aggregate(.~ formula,data=fticr_samples_all, sum) #aggregates the metadata and samples to merge rows with the same molecular formula. We keep the metadata in here
+
+#to ensure the metadata and samples are merged consistently. Duplicated molecular formula will have their intensities summed. 
+
+formula_check <- fticr_samples_agg %>% select(formula) %>% distinct()
+
+nrow(formula_check) #this should be the same as the nrow(unique_formula) and nrow(fticr_meta) if everything goes well. 
+
+fticr_samples_agg_meta <- fticr_samples_agg %>%
+  full_join(fticr_meta, by= "formula")
+
+fticr_samples_agg_mass <- fticr_samples_agg %>% select(-formula)
+
+mass_to_formula_agg <- fticr_samples_agg %>%
+  select(Mass, formula)
+
+nrow(mass_to_formula_agg)
+
+```
+
+## Step 6. Clean data: Long format, remove blank signals, and only retain MFs that are in both reps. 
+
+```{r step 6: data cleaning}
+
+#make data long form and get the reps into a common sample name: 
+
+reps_suffix = "_[A-Za-z0-9]+$"
+
+data_long_key = compute_presence(fticr_samples_agg_mass) %>% 
+    left_join(mass_to_formula_agg, by = "Mass") %>% 
+    dplyr::select(formula, Sample_ID, presence) %>%
+    mutate(sample_name = str_replace_all(Sample_ID, reps_suffix, "")) %>%
+    mutate(sample_name = str_replace_all(sample_name, "_[A-Za-z]$", "")) %>%
+    mutate(sample_name = str_replace_all(sample_name, "_[0-9]$", "")) %>%
+    mutate(sample_name = stringr::str_replace(sample_name,"pooled","POOL"),
+           sample_name = stringr::str_replace(sample_name,"Source","SOURCE")) %>% 
+    left_join(sample_list, by = "sample_name") 
+  
+nrow(data_long_key)
+
+# Filter out the blanks, so that we can remove MFs present in any of the blanks: 
+
+data_long_key_blanks_mfs <- data_long_key %>%
+  filter(str_detect(sample_name, regex("blank", ignore_case = TRUE))) %>%
+  distinct(formula)
+
+data_long_key_blanks_mfs
+
+# Group by sample_name and filter to only display the formulas that appear in all reps
+
+data_long_key_counts = data_long_key %>% 
+    group_by(sample_name, formula) %>%
+    summarise(count_reps = n_distinct(Sample_ID), .groups = 'drop') %>%
+    filter(count_reps > 1) %>%
+    arrange(sample_name, formula)
+
+nrow(data_long_key_counts)
+
+# Finally, remove the formulas that are in the blanks
+
+data_long_key_counts_blank_subtracted = data_long_key_counts %>%
+  anti_join(data_long_key_blanks_mfs, by = "formula") %>%
+    filter(!str_detect(sample_name, regex("QC_SRFAII_40ppm", ignore_case = TRUE))) #drop the QC samples, so the data frame is only your sample data
+
+nrow(data_long_key_counts_blank_subtracted)
+
+# check final number of formula
+nformula_blank_subtracted = data_long_key_counts_blank_subtracted %>%
+  select(formula) %>%
+  distinct()
+
+nrow(nformula_blank_subtracted)
+
+```
+
+## Step 7. Recombine metadata and sample data into a final dataframe.
+
+```{r step 7 final L1 dataframe}
+
+#filter the meta data to the formula not present in the blanks 
+
+meta_blank_corr = fticr_meta %>%
+  inner_join(nformula_blank_subtracted, by="formula")
+
+#merging aggregated metadata with sample data and sample metadata to create final data frame
+
+fticr_data <- merge(x=meta_blank_corr, y=data_long_key_counts_blank_subtracted, by="formula", all.x=TRUE) %>%
+  select(-count_reps) %>%
+  mutate(presence = 1) %>%
+  left_join(sample_list_allmeta, by = "sample_name", relationship = "many-to-many") %>%
+    rename(plot= Plot,
+           grid = Grid,
+         collection_datetime = datetime) %>%
+  select(Event, plot, grid, sample_name, formula, presence, EMSL_class:DBE_C, date, time, collection_datetime, tz)
+
+```
+
+## Step 8. write L1 data
+
+```{r step 8: write out data}
+
+#porewater data
+fticr_data_porewater <- fticr_data %>%
+  filter(str_detect(sample_name, regex("POOL", ignore_case = TRUE)))
+
+write_csv(fticr_data_porewater, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_FTICRMS_L1_May2022-May2023.csv")
+
+saveRDS(fticr_data_porewater, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_FTICRMS_L1_May2022-May2023.rds")
+
+#source water data
+fticr_data_source <- fticr_data %>%
+  filter(str_detect(sample_name, regex("SOURCE", ignore_case = TRUE)))
+
+
+write_csv(fticr_data_source, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_L1_May2022-May2023.csv")
+
+saveRDS(fticr_data_source, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_L1_May2022-May2023.rds")
+
+```
+
+## Step 9. Compute relative abundance dataframe
+
+```{r step 9: relabund}
+
+fticr_relabund = fticr_data %>%
+   group_by(Event, plot, grid, collection_datetime, sample_name, Class_detailed) %>%
+    dplyr::summarise(abund = sum(presence))  %>%
+    ungroup() %>% 
+    # create a new column for total counts per core assignment
+    # and then calculate relative abundance  
+    group_by(Event, plot, grid, collection_datetime, sample_name) %>% 
+    dplyr::mutate(total = sum(abund),
+                  relabund  = round((abund/total)*100,2))
+```
+
+Make a quick plot
+
+### This made me remember I did sample reps for a couple of the vial names where I merged two dates of pooled samples together for example: I need to explore this to see how I want to handle it moving forward.
+	
+TMP_SW_POOL_20220718
+	
+TMP_SW_POOL_20220718_20220721
+	
+TMP_SW_POOL_20220721
+
+```{r relabund plot}
+
+fticr_relabund %>% 
+  filter(grid == "POOL") %>%
+  filter(plot == "SW") %>%
+  arrange(collection_datetime) %>%
+  group_by(plot, grid, collection_datetime) %>%
+  mutate(group= cur_group_id()) %>%
+    ggplot(aes(x = group, y = relabund, fill = Class_detailed)) + 
+    geom_bar(stat = "identity") 
+```
+Looks like maybe the aromatics and condensed aromatics are increasing after the event 
+
+
+
+

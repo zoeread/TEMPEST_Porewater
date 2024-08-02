@@ -20,7 +20,8 @@ compute_indices = function(dat){
                   HC = round(H/C,2),
                   OC = round(O/C,2),
                   DBE_AI = 1+C-O-S-0.5*(N+P+H),
-                  DBE =  1 + ((2*C-H + N + P))/2,
+                  DBE = round((C-0.5*H+0.5*N+1),0),
+                 # DBE =  1 + ((2*C-H + N + P))/2,
                   DBE_C = round(DBE_AI/C,4)) %>% 
     dplyr::select(-c(C:P))
 }
@@ -58,18 +59,19 @@ assign_class_seidel = function(meta_clean, meta_indices){
 ## for data file
 compute_presence = function(dat){
   dat %>% 
-    pivot_longer(-("Mass"), values_to = "presence", names_to = "CoreID") %>% 
+    pivot_longer(-("Mass"), values_to = "presence", names_to = "Sample_ID") %>% 
     # convert intensities to presence==1/absence==0  
     dplyr::mutate(presence = if_else(presence>0,1,0)) %>% 
     # keep only peaks present
     filter(presence>0)
 }
+
 apply_replication_filter = function(data_long_key, ...){
   max_replicates = 
     data_long_key %>% 
     ungroup() %>% 
     group_by(...) %>% 
-    distinct(CoreID) %>% 
+    distinct(Sample_ID) %>% 
     dplyr::summarise(reps = n())
   
   
@@ -109,6 +111,7 @@ make_fticr_meta = function(report){
   list(meta2 = meta2,
        meta_formula = meta_formula)
 }
+
 make_fticr_data = function(report, ...){
   fticr_report = (apply_filter_report(report))
   mass_to_formula = make_fticr_meta(report)$meta_formula
@@ -117,9 +120,10 @@ make_fticr_data = function(report, ...){
   
   data_presence = compute_presence(data_columns) %>% 
     left_join(mass_to_formula, by = "Mass") %>% 
-    dplyr::select(formula, CoreID, presence)
+    dplyr::select(formula, Sample_ID, presence) %>%
+    mutate(Sample_ID = str_replace(Sample_ID, reps_suffix, ""))
   
-  data_long_key = data_presence %>% left_join(corekey, by = "CoreID")
+  data_long_key = data_presence %>% left_join(sample_list, by = "Sample_ID")
   
   data_long_key_repfiltered = apply_replication_filter(data_long_key, ...)
   
