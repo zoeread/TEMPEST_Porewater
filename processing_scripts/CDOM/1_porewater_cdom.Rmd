@@ -245,14 +245,14 @@ eems_all_meta =  eems %>%
 
 duplicates <- eems_all_meta %>% subset(duplicated(sample_name))
 
-View(duplicates)
+duplicates
 
 # there are some replicates: 
 reps <- eems_all_meta %>%
   group_by(sample_name) %>%
   filter(n() > 1) 
 
-View(reps)
+reps
 
 reps_names <- reps %>%
   select(sample_name) %>%
