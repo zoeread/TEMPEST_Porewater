@@ -86,7 +86,7 @@ drive_download(inventory_directory, path= file_path, overwrite = TRUE)
 
 non_event_sample_key <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", skip=3, sheet="Individual") %>%
   select(Sample_ID, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_End_Time_24hrs, EST_EDT) %>%
-  filter(str_detect(Sample_ID, "DOC")) %>%
+  filter(str_detect(Sample_ID, "DOC/CDOM|DOC")) %>%
   rename(sample_name = Sample_ID,
          evacuation_date = Evacuation_date_YYYMMDD,
          collection_date = Collection_Date_YYYYMMDD,
@@ -158,6 +158,11 @@ pooled_sample_key<- readxl::read_excel(file_path, skip=4, sheet="Pooled") %>%
   select(Sample_ID, Plot, Grid, date, evacuation_date, collection_date) %>%
   mutate(date = as.character(date)) %>%
   ungroup()
+
+sample_key_merging_all <-   non_event_sample_key_merging %>%
+  bind_rows(pooled_sample_key) %>%
+  select(-Sample_ID) %>%
+  mutate(date = lubridate::as_date(date))
 ```
 # 2. Functions -----------------------------------------------------------------
 
@@ -290,10 +295,10 @@ eems_all_meta_dups_merged <- eems_all_meta_no_reps %>%
   left_join(sample_key_merging, by = c("Plot","Timepoint")) %>%
   mutate(date= case_when(is.na(date) ~ stringr::str_extract(sample_name, "[0-9]{8}"),
                          TRUE ~ date )) %>%
-  left_join(non_event_sample_key_merging, by= c("Plot","Grid","date"), suffix = c("", ".fill")) %>%
+  mutate(date = lubridate::as_date(date)) %>%
+  left_join(sample_key_merging_all, by= c("Plot","Grid","date"), suffix = c("", ".fill")) %>%
   mutate(time = coalesce(time, time.fill)) %>%
   select(-time.fill) %>%
-  left_join(pooled_sample_key, by= c("Plot","Grid","date", "evacuation_date", "collection_date")) %>%
   mutate(time = case_when(is.na(time) ~ stringr::str_extract(sample_name, "(?<=[0-9]{8}_)\\d{4}"),
                           TRUE ~ time),
          time = str_replace(time, '\\d+', function(m) str_pad(m, 6, pad = '0', side = ("right")))
@@ -320,18 +325,20 @@ eems_all_meta_dups_merged <- eems_all_meta_no_reps %>%
   mutate(datetime = as.POSIXct(paste(date, time), format = "%Y-%m-%d %H:%M:%S"))   %>%
    rename(grid = Grid,
          collection_datetime = datetime) %>%
-  #manual entry of missing evacuation information from the notes: 
+  #manual entry of missing evacuation information from the notes/inventory sheet: 
   mutate(evacuation_date = case_when(
-    is.na(evacuation_date) & str_detect(collection_datetime, "2022-05-18") ~ as.Date("2022-05-12"),
-    is.na(evacuation_date) & str_detect(collection_datetime, "2022-05-20")  ~ as.Date("2022-05-12"), 
-    is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-13")  ~ as.Date("2022-06-09"),
-    is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-15")  ~ as.Date("2022-06-09"),
     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-20") ~ as.Date("2022-06-18"),
     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-22") ~ as.Date("2022-06-22"),
     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-23") ~ as.Date("2022-06-22"),
     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-24") ~ as.Date("2022-06-23"),
-    is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-05") ~ as.Date("2023-06-03"),
-    is.na(evacuation_date) & str_detect(collection_datetime, "2023-10-05") ~ as.Date("2023-10-02"),
+    is.na(evacuation_date) & str_detect(collection_datetime, "2022-09-09") ~ as.Date("2022-09-09"),
+    is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-06") ~ as.Date("2023-06-05"),
+    is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-07 08:00:00") ~ as.Date("2023-06-06"),
+     is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-07") ~ as.Date("2023-06-07"),
+    is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-12") ~ as.Date("2023-06-08"),
+    is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-27") ~ as.Date("2023-06-23"),
+    is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-28") ~ as.Date("2023-06-23"),
+     is.na(evacuation_date) & str_detect(collection_datetime, "2023-07-07") ~ as.Date("2023-07-05"),
     TRUE ~ evacuation_date)) %>%
   filter(collection_datetime != "2022-05-23 11:59:00") %>%
   mutate(set_tz = with_tz(collection_datetime, tzone = "America/New_York"),
@@ -350,11 +357,17 @@ Now, split out the source and the porewater...
 source_eems_all <- eems_all_meta_dups_merged %>%
   filter(grepl("SOURCE|ESTUARY|BARGE", sample_name)) 
 
-PW_eems_all <- eems_all_meta_dups_merged %>%
+knitr::kable(source_eems_all) %>% kableExtra::kable_styling("striped", full_width = F) %>%
+  kableExtra::scroll_box(width = "100%", height = "200px")
+
+PW_eems_grids <- eems_all_meta_dups_merged %>%
   filter(grid != "SOURCE") %>%
   filter(grid != "WELL") %>%
   filter(grid != "BARGE") %>%
   filter(grid != "POOL")
+
+knitr::kable(PW_eems_grids) %>% kableExtra::kable_styling("striped", full_width = F) %>%
+  kableExtra::scroll_box(width = "100%", height = "200px")
 
 PW_eems_all_pooled_only <- eems_all_meta_dups_merged %>%
   filter(grid != "SOURCE") %>%
@@ -362,10 +375,16 @@ PW_eems_all_pooled_only <- eems_all_meta_dups_merged %>%
   filter(grid != "BARGE") %>%
   filter(grid == "POOL")
 
+knitr::kable(PW_eems_all_pooled_only) %>% kableExtra::kable_styling("striped", full_width = F) %>%
+  kableExtra::scroll_box(width = "100%", height = "200px")
+
 PW_eems_allwpooled <- eems_all_meta_dups_merged %>%
   filter(grid != "SOURCE") %>%
   filter(grid != "WELL") %>%
   filter(grid != "BARGE")
+
+knitr::kable(PW_eems_allwpooled) %>% kableExtra::kable_styling("striped", full_width = F) %>%
+  kableExtra::scroll_box(width = "100%", height = "200px")
 ```
 
 # Save data
@@ -374,29 +393,38 @@ make eval=FALSE if you are not writing the version of record of these files:
 
 ## Save for manuscript
 
-```{r manuscript saving}
+```{r manuscript saving, eval=FALSE}
 saveRDS(source_eems_all, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_CDOM_L1_TMP1TMP2.rds")
 
 saveRDS(PW_eems_all_pooled_only, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_POOLED_CDOM_L1_TMP1TMP2.rds")
 
-saveRDS(PW_eems_all, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_grids_CDOM_L1_TMP1TMP2.rds")
+saveRDS(PW_eems_grids, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_grids_CDOM_L1_TMP1TMP2.rds")
 ```
 
 ## Write for Google Drive L1
 
-```{r write}
+```{r l1 data}
 
 l1_porewatergrids_2022 = PW_eems_allwpooled  %>%
    filter(collection_datetime < year1_stop & collection_datetime > year1_start)
-
-write_csv(l1_porewatergrids_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2022.csv")
-
+#2022 L1
+knitr::kable(l1_porewatergrids_2022) %>% kableExtra::kable_styling("striped", full_width = F) %>%
+  kableExtra::scroll_box(width = "100%", height = "200px")
 
 l1_porewatergrids_2023 = PW_eems_allwpooled  %>%
    filter(collection_datetime < year2_stop & collection_datetime > year2_start)
 
-write_csv(l1_porewatergrids_2023, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2023.csv")
+#2023 L1
+knitr::kable(l1_porewatergrids_2023) %>% kableExtra::kable_styling("striped", full_width = F) %>%
+  kableExtra::scroll_box(width = "100%", height = "200px")
 
+```
+
+```{r write L1, eval=FALSE}
+
+write_csv(l1_porewatergrids_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2022.csv")
+
+write_csv(l1_porewatergrids_2023, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2023.csv")
 
 ```
 
