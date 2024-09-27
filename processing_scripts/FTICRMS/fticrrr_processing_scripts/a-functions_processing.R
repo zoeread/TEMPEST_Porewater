@@ -47,11 +47,11 @@ assign_class_seidel = function(meta_clean, meta_indices){
                              HC >= 1.5 ~ "aliphatic"),
            Class = replace_na(Class, "other"),
            Class_detailed = case_when(AImod>0.66 ~ "condensed aromatic",
-                                      AImod<=0.66 & AImod > 0.50 ~ "aromatic",
-                                      AImod <= 0.50 & HC < 1.5 ~ "unsaturated/lignin",
-                                      HC >= 2.0 & OC >= 0.9 ~ "carbohydrate",
-                                      HC >= 2.0 & OC < 0.9 ~ "lipid",
-                                      HC < 2.0 & HC >= 1.5 & N==0 ~ "aliphatic",
+                                      AImod<=0.66 & AImod > 0.50 ~ "highly aromatic",
+                                      AImod <= 0.50 & HC < 1.5 ~ "unsaturated compounds",
+                                      HC >= 2.0 & OC >= 0.9 ~ "saturated compounds",
+                                      HC >= 2.0 & OC < 0.9 ~ "saturated compounds",
+                                      HC < 2.0 & HC >= 1.5 & N==0 ~ "unsaturated aliphatics",
                                       HC < 2.0 & HC >= 1.5 & N > 0 ~ "aliphatic+N")) %>% 
     dplyr::select(Mass, EMSL_class, Class, Class_detailed)
 }
