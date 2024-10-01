@@ -252,6 +252,12 @@ blanks_raw <- files %>%
 #  filter(rundate %in% files_dates) %>% # filter to just run dates you need 
   bind_rows() 
 
+checks_raw <- files %>% 
+  map_df(read_data) %>% 
+  filter(grepl("CK", sample_name)) %>% # filter to blanks only
+#  filter(rundate %in% files_dates) %>% # filter to just run dates you need 
+  bind_rows() 
+
 readmes_dilution_action <- ReadMes %>% 
   map_df(read_mes) %>% 
   filter(grepl("TMP", sample_name)) %>% # filter to TMP samples only
@@ -299,6 +305,24 @@ blanks <- blanks_raw %>%
   select(rundate, npoc_blank, npoc_blank_SD, tdn_blank, tdn_blank_SD)
 
 print(blanks) # Check out the blank data 
+```
+# Check out check standards
+
+```{r checks}
+checks <- checks_raw %>% 
+  filter(!run_datetime %in% NA) %>% 
+  mutate(npoc_raw = ifelse(npoc_raw > 0, npoc_raw, NA)) %>%
+  mutate(tdn_raw = ifelse(tdn_raw > 0, tdn_raw, NA)) %>%
+  mutate(standard_values = as.numeric(str_extract(sample_name, "(?i)(\\d+)(?=ppm)")),
+         percent_error_C = abs((npoc_raw - standard_values) / standard_values) * 100,
+         percent_error_N = abs((tdn_raw - standard_values) / standard_values) * 100,
+         ppm_error_C = abs((npoc_raw - standard_values)),
+         ppm_error_N = abs((tdn_raw - standard_values))) %>%
+  group_by(rundate) %>% 
+  summarize(percent_error_C_avg = round(mean(percent_error_C[!is.na(percent_error_C)]), 2),
+            percent_error_C_sd = round(sd(percent_error_C[!is.na(percent_error_C)]), 2))
+
+print(checks) # Check out the check standards overall error and std 
 ```
 
 # Flag sketch data 
