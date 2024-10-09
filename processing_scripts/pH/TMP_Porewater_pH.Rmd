@@ -1,0 +1,107 @@
+---
+title: "Porewater pH"
+author: "AMP"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+This script imports manually recorded pH values from spreadsheet Alice maintains and exports clean Level 1 QC'd data. Raw data are read in from Google Drive. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T, 
+                      message = F,
+                      warning = F)
+
+# load packages
+require(pacman)
+pacman::p_load(tidyverse, # keep things tidy
+               janitor, # useful for simplifying column names
+               googlesheets4, # read_sheet 
+               googledrive, # drive_ functions
+               plotrix,
+               here) 
+
+common_tz = "Etc/GMT+5"
+
+Sys.setenv(TZ = "America/New_York")
+
+getwd()
+```
+
+# Set study dates
+
+```{r dates}
+year1_start = lubridate::as_date("2022-01-01")
+year1_stop = lubridate::as_date("2022-12-31")
+
+year2_start = lubridate::as_date("2023-01-01")
+year2_stop = lubridate::as_date("2023-12-31")
+
+year3_start = lubridate::as_date("2024-01-01")
+year3_stop = lubridate::as_date("2024-12-31")
+```
+
+# Import Data
+
+```{r import data}
+directory <- "https://docs.google.com/spreadsheets/d/1KoskjXkHgPmSyFERvZLCX5ZBuV2cyev4-UEBuT0y-Jw/edit?gid=0#gid=0"
+
+drive_download(directory, path="~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewater_pH_raw.xlsx", overwrite = TRUE)
+
+pH_raw <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewater_pH_raw.xlsx", sheet="pH") 
+```
+# Clean and Flag
+```{r clean up}
+pH <- pH_raw %>%
+   rename(plot = Plot,
+          grid = Location,         
+          date = Date_YYYYMMDD,
+          time = Time_24hr,
+          tz = `EDT/EST`,
+          collection_temp_C = Temp_C) %>%
+  mutate(date = lubridate::as_date(as.character(date), format = "%Y%m%d"),
+         time = str_replace(time, "^[0-9]{5}$", function(x) paste0("0",x)),
+         Depth_cm = case_when(Depth_cm == "NA" ~ NA,
+                           TRUE ~ Depth_cm),
+         collection_temp_C = case_when(collection_temp_C == "NA" ~ NA,
+                           TRUE ~ collection_temp_C)) %>%
+  filter(!Action %in% "Omit") %>%
+  filter(!is.na(pH)) %>%
+  mutate(time = sprintf("%04d", as.numeric(time)),
+           time= str_replace(time, '\\d+', function(m) str_pad(m, 6, pad = '0', side = ("right"))),
+                            time= strptime(time, format ="%H%M%S"),
+                            time = strftime(time, "%H:%M:%S")) %>%
+   mutate(datetime = as.POSIXct(paste(date, time), format = "%Y-%m-%d %H:%M:%S")) %>%
+  mutate(collection_temp_C= as.numeric(collection_temp_C)) %>%
+  mutate(flag = case_when(is.na(collection_temp_C) ~ "temperature not recorded",
+                          TRUE ~ NA)) %>%
+   mutate(plot = case_when(plot == "Seawater" ~ "Estuarine-water",
+                          TRUE ~ plot),
+          grid = case_when(grid == "Source" ~ "SOURCE",
+                           TRUE ~ grid)
+            ) %>%
+  select(Site, plot, grid, pH, collection_temp_C, datetime, tz, flag)
+```
+
+## Write for Google Drive L1
+
+```{r porewater pH}
+
+porewater_pH <- pH %>%
+  filter(grid != "SOURCE") %>%
+  filter(datetime < year2_stop & datetime > year2_start)
+
+write_csv(porewater_pH, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_pH_L1_2023.csv")
+
+```
+
+```{r sourcewater pH}
+
+source_pH <- pH %>%
+  filter(grid == "SOURCE") %>%
+  filter(datetime < year2_stop & datetime > year2_start)
+
+write_csv(source_pH, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SourceWater_pH_L1_2023.csv")
+
+```
+
