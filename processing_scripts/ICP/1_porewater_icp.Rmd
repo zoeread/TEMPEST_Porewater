@@ -1,0 +1,253 @@
+---
+title: "ICP from ANL"
+author: "AMP"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+This script imports QA/QC'd ICP data measured using [ICP-OES] at Argonne National Lab and exports clean, Level 1 data. Raw Data are read in from GitHub. 
+
+*This script is only valid for 2022 event.* 
+
+*The data in the "Porewater" columns have already been dilution corrected.* 
+
+*YR1 ICP data was collected from POOL samples only.*  
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = F, 
+                      message = F,
+                      warning = F)
+
+# load packages
+require(pacman)
+pacman::p_load(tidyverse, # keep things tidy
+               janitor, # useful for simplifying column names
+               googlesheets4, # read_sheet 
+               googledrive, # drive_ functions
+               plotrix,
+               here,
+               knitr,
+               kableExtra) 
+
+common_tz = "Etc/GMT+5"
+
+Sys.setenv(TZ = "America/New_York")
+
+getwd()
+```
+
+# 1. Bring in metadata 
+```{r metadata}
+
+#date/times for the different time points:
+
+sample_key <- readRDS("~/GitHub/tempest-system-level-analysis/data/for processing/TMP_Event_June2022_META_PW_SOURCE_DateTime.rds")
+
+## add into here time points for pre and post sampling for gapfilling purposes later on
+estuary_key1 = tibble(Plot = "ESTUARY",
+                     Timepoint = "HR4", 
+                     date = "20220622", 
+                     time= "110000")
+
+estuary_key2 = tibble(Plot = "ESTUARY",
+                     Timepoint = "HR7", 
+                     date = "20220622", 
+                     time= "150000")
+
+sample_key_merging <- sample_key %>%
+  mutate(date = stringr::str_remove_all(Date, "-")) %>%
+  rename(time = Start_time) %>%
+  mutate(time = str_replace_all(time, ":", "")) %>%
+  select(Plot,Timepoint, date, time) %>%
+  bind_rows(estuary_key1,estuary_key2) %>%
+  mutate(time = str_replace(time, "^[0-9]{5}$", function(x) paste0("0",x)))
+
+```
+
+# 2. Import ICP sheet from ANL 
+```{r import ICP}
+
+icp_raw <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/icp/PNNL ICP Analysis TEMPEST_1_results.xlsx", skip = 2)
+
+knitr::kable(icp_raw) %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+# 3. Clean up datasheet
+```{r clean}
+
+fill1 <- function(df) {
+  df %>%
+    mutate(filled_value = if_else(value == "stdev", lag(value), value))
+ }
+
+
+combined_rownames <- icp_raw %>%
+  slice((1:3)) %>%
+  summarize_all(toString) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed("NA"), ""))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed(" "), ""))) %>%
+  mutate(across(everything(), ~ str_replace(.x, "^,,", ""))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed(" "), ""))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed(","), "_"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed("("), "_"))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed(")"), ""))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed("/"), ""))) %>%
+  mutate(across(everything(), ~ str_replace_all(.x, fixed("="), ""))) 
+
+combined_rownames_long = combined_rownames %>% 
+  pivot_longer(cols = everything(), names_to = "order", values_to = "value") %>%
+  mutate(order = str_remove_all(order, "...")) %>%
+  mutate(order= as.numeric(order))
+
+
+filled_data <- fill1(combined_rownames_long) %>%
+  mutate(filled_value = case_when(str_detect(value, "stdev") ~ str_replace(filled_value, "average", "stdev"),
+         TRUE ~ filled_value)) %>%
+  select(-value) %>%
+  rename(value= filled_value) %>%
+  mutate(DL = str_extract(value, "(?<=DL)\\d+\\.?\\d*")) %>%
+  mutate(DL = as.numeric(DL)) %>%
+  tidyr::fill(DL, .direction = "down")
+
+icp_names <- filled_data %>%
+  select(-order) %>%
+  pivot_wider(names_from = value, values_from = DL) 
+
+DL_df <- icp_names
+
+names(DL_df) <- sub("_.*", "_DL", names(DL_df))
+
+DL_df_long <- DL_df %>%
+  pivot_longer(cols= everything(), names_to = "element", values_to = "DL") %>%
+  drop_na() %>%
+  distinct()
+
+DL_df_wide <- DL_df_long %>%
+  pivot_wider(names_from = element, values_from = DL)
+
+#Now add back to the data: 
+icp_1 <- icp_raw %>%
+ slice(-(1:3))
+
+colnames(icp_1) <- colnames(icp_names)
+
+icp_2 <- icp_1 %>%
+    mutate(across(Samplevolume:P_mgL_Porewater_stdev, as.numeric))
+
+icp_wDL <- cbind(icp_2, DL_df_wide)
+
+knitr::kable(icp_wDL)  %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+# 4. add detection limit flags 
+```{r add flags}
+
+icp_wflags <- icp_wDL %>%
+    mutate(Na_flag = case_when(Na_mgL_average_DL0.5ppm <= Na_DL ~ paste0(Na_DL, " ppm detection limit; measured value ≤ detection limit for value before dilution correction"),
+           TRUE ~ NA),
+           K_flag = case_when(K_mgL_average_DL0.2ppm <= K_DL ~ paste0(K_DL, " ppm detection limit; measured value ≤ detection limit for value before dilution correction"), 
+           TRUE ~ NA),
+           Ca_flag = case_when(Ca_mgL_average_DL0.02ppm <= Ca_DL ~ paste0(Ca_DL, " ppm detection limit; measured value ≤ detection limit for value before dilution correction"), 
+           TRUE ~ NA),
+           Mg_flag = case_when(Mg_mgL_average_DL0.02ppm <= Mg_DL ~ paste0(Mg_DL, " ppm detection limit; measured value ≤ detection limit for value before dilution correction"), 
+           TRUE ~ NA),
+           Al_flag = case_when(Al_mgL_average_DL0.3ppm <= Al_DL ~ paste0(Al_DL, " ppm detection limit; measured value ≤ ddetection limit for value before dilution correction"), 
+           TRUE ~ NA),
+           S_flag = case_when(S_mgL_average_DL0.1ppm <= S_DL ~ paste0(S_DL, " ppm detection limit; measured value ≤ detection limit for value before dilution correction"), 
+           TRUE ~ NA),
+           Fe_flag = case_when(Fe_mgL_average_DL0.1ppm <= Fe_DL ~ paste0(Fe_DL, " ppm detection limit; measured value ≤ detection limit for value before dilution correction"), 
+           TRUE ~ NA),
+            P_flag = case_when(P_mgL_average_DL0.1ppm <= P_DL ~ paste0(P_DL, " ppm detection limit; measured value ≤ detection limit for value before dilution correction"), 
+           TRUE ~ NA)
+           )
+
+
+#select the columns we want to report:
+
+icp_clean_wflags <- icp_wflags %>%
+  select(Sample_ID, contains("Porewater"), Na_flag:P_flag)
+
+knitr::kable(icp_clean_wflags)  %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+# 5. merge data back with metadata
+```{r merge with metadata}
+
+icp_clean_wflags_meta <- icp_clean_wflags %>%
+  rename(sample_name = Sample_ID) %>%
+  mutate(sample_name = case_when(sample_name == "TMP_FW_POOL_202310" ~ "TMP_FW_POOL_20231002", #this didn't have a date in the sample name
+                              TRUE ~ sample_name)) %>%
+  mutate(sample_name = stringr::str_replace(sample_name,"POOLED","POOL")) %>%
+   #These are the pooled samples that are not actually pooled:
+  mutate(sample_name = stringr::str_replace(sample_name, "TMP_C_POOL_T2", "TMP_C_H6_T2")) %>%
+  mutate(sample_name = stringr::str_replace(sample_name, "TMP_SW_POOL_20230612", "TMP_SW_B4_20230612")) %>%
+  mutate(sample_name = stringr::str_replace(sample_name, "TMP_SW_POOL_20230606", "TMP_SW_C3_20230606")) %>%
+ # making meta from the sample ID 
+  mutate(Event = stringr::str_extract(sample_name, "TMP"),
+         Plot = stringr::str_extract(sample_name, 'FW|SW|C|ESTUARY'), 
+         Grid = stringr::str_extract(sample_name, "B4|C3|C6|D5|E3|F4|F6|H3|H6|I5|SOURCE|ESTUARY|POOL|WELL"),
+         Timepoint = stringr::str_extract(sample_name,"T[0-9]|HR[0-9]"),
+         Timepoint = case_when(Timepoint == "HR8" ~ "HR7", #change the estuary HR8 to HR7
+                                TRUE ~ Timepoint),
+         Pool_Timepoint = stringr::str_extract(sample_name,"[0-9]{8}_\\d{8}|[0-9]{8}-\\d{8}"),
+         sample_name = stringr::str_remove(sample_name,"(?<=[0-9]{8})_\\d{8}|(?<=[0-9]{8})-\\d{8}"),
+         sample_name = stringr::str_remove(sample_name, "_FW\\d{2}|_SW\\d{2}")) %>%
+    mutate(Plot = case_when(Grid == "ESTUARY" ~ "ESTUARY",
+                        TRUE ~ Plot)) %>%
+  left_join(sample_key_merging, by = c("Plot","Timepoint")) %>%
+  mutate(date= case_when(is.na(date) ~ stringr::str_extract(sample_name, "[0-9]{8}"),
+                  TRUE ~ date)) %>%
+    mutate(date = lubridate::as_date(date, format = "%Y%m%d"))
+
+knitr::kable(icp_clean_wflags_meta)  %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+# 6. get data ready to export 
+```{r ready to export}
+#Only porewater POOLED, all dates:
+
+l1_icp_pw_pooled_2022 <- icp_clean_wflags_meta %>%
+  filter(Grid == "POOL") %>%
+  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag)
+
+knitr::kable(l1_icp_pw_pooled_2022)  %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%", height = "300px")
+
+#Soure water: 
+l1_icp_source_2022 <- icp_clean_wflags_meta %>%
+  filter(grepl("SOURCE|ESTUARY|BARGE", Grid))%>%
+  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag)
+
+knitr::kable(l1_icp_source_2022) %>%
+  kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(width = "100%", height = "300px")
+```
+
+# 7. write out
+```{r write}
+write_csv(l1_icp_pw_pooled_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_POOL_ICP_L1_2022.csv")
+
+write_csv(l1_icp_source_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SOURCE_ICP_L1_2022.csv")
+
+
+#For code review: 
+write_csv(l1_icp_pw_pooled_2022, "~/GitHub/TEMPEST_Porewater/processing_scripts/ICP/TEMPORARY/TMP_PW_POOL_ICP_L1_2022.csv")
+
+write_csv(l1_icp_source_2022, "~/GitHub/TEMPEST_Porewater/processing_scripts/ICP/TEMPORARY/TMP_SOURCE_ICP_L1_2022.csv")
+
+
+```
+
+
+
+

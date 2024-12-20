@@ -43,6 +43,42 @@ year3_stop = lubridate::as_date("2024-12-31")
 
 # Import Data
 
+```{r import metadata}
+inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
+
+drive_download(inventory_directory, path="~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", overwrite = TRUE)
+
+sample_key <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", skip=3, sheet="Porewater - Individual") %>%
+  select(Sample_ID, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_End_Time_24hrs, EST_EDT) %>%
+  filter(str_detect(Sample_ID, "DOC")) %>%
+  rename(sample_name = Sample_ID,
+         evacuation_date = Evacuation_date_YYYMMDD,
+         collection_date = Collection_Date_YYYYMMDD,
+         time = Collection_End_Time_24hrs,
+         tz = EST_EDT) %>%
+  mutate(evacuation_date = lubridate::as_date(as.character(evacuation_date), format = "%Y%m%d"),
+         collection_date = lubridate::as_date(as.character(collection_date), format = "%Y%m%d"),
+         elapsed_time = lubridate::days(collection_date - evacuation_date)) %>%
+  select(sample_name, evacuation_date, collection_date, time, tz, elapsed_time)
+
+sample_key_merging <- sample_key %>%
+  mutate(Plot = stringr::str_extract(sample_name, 'FW|SW|C|ESTUARY'), 
+         Grid = stringr::str_extract(sample_name, "B4|C3|C6|D5|E3|F4|F6|H3|H6|I5|SOURCE|ESTUARY|POOL|WELL"),
+         date = stringr::str_extract(sample_name, "[0-9]{8}"),
+         time = str_replace(time, "^[0-9]{3}$", function(x) paste0("0", x, "00")),
+         time = str_replace(time, "^[0-9]{4}$", function(x) paste0(x, "00"))
+         ) %>%
+  rename(plot = Plot,
+          grid = Grid) %>%
+   mutate(date = lubridate::as_date(as.character(date), format = "%Y%m%d")) %>%
+   mutate(plot = case_when(plot == "SW" ~ "Estuarine-water",
+                          plot == "C" ~ "Control",
+                          plot == "FW" ~ "Freshwater",
+                          TRUE ~ plot)) %>%
+  dplyr::select(plot, date, evacuation_date) %>%
+  distinct()
+```
+
 ```{r import data}
 directory <- "https://docs.google.com/spreadsheets/d/1KoskjXkHgPmSyFERvZLCX5ZBuV2cyev4-UEBuT0y-Jw/edit?gid=0#gid=0"
 
@@ -75,7 +111,7 @@ pH <- pH_raw %>%
   mutate(collection_temp_C= as.numeric(collection_temp_C)) %>%
   mutate(flag = case_when(is.na(collection_temp_C) ~ "temperature not recorded",
                           TRUE ~ NA)) %>%
-   mutate(plot = case_when(plot == "Seawater" ~ "Estuarine-water",
+   mutate(plot = case_when(plot == "Saltwater" ~ "Estuarine-water",
                           TRUE ~ plot),
           grid = case_when(grid == "Source" ~ "SOURCE",
                            TRUE ~ grid)
@@ -83,13 +119,34 @@ pH <- pH_raw %>%
   select(Site, plot, grid, pH, collection_temp_C, datetime, tz, flag)
 ```
 
+# Add in lysimeter metadata
+
+```{r metadata add}
+pH_clean <- pH %>%
+  mutate(date = lubridate::date(datetime)) 
+```
+
 ## Write for Google Drive L1
 
 ```{r porewater pH}
 
-porewater_pH <- pH %>%
+porewater_pH <- pH_clean %>%
   filter(grid != "SOURCE") %>%
-  filter(datetime < year2_stop & datetime > year2_start)
+left_join(sample_key_merging, by= c("plot","date"), suffix = c("", ".fill")) %>%
+   #manual entry of missing evacuation information from the notes: 
+  mutate(evacuation_date = case_when(
+    is.na(evacuation_date) & str_detect(date, "2023-06-05") ~ as.Date("2023-06-03"),
+    is.na(evacuation_date) & str_detect(date, "2023-06-06") ~ as.Date("2023-06-05"),
+    is.na(evacuation_date) & str_detect(date, "2023-06-07") ~ as.Date("2023-06-06"),
+    is.na(evacuation_date) & str_detect(date, "2023-06-10") ~ as.Date("2023-06-07"),
+    is.na(evacuation_date) & str_detect(date, "2023-06-11") ~ as.Date("2023-06-10"),
+    is.na(evacuation_date) & str_detect(date, "2023-06-14") ~ as.Date("2023-06-12"),
+    is.na(evacuation_date) & str_detect(date, "2023-06-17") ~ as.Date("2023-06-14"),
+    is.na(evacuation_date) & str_detect(date, "2023-07-10") ~ as.Date("2023-07-07"),
+    is.na(evacuation_date) & str_detect(date, "2023-10-05") ~ as.Date("2023-10-02"),
+    TRUE ~ evacuation_date)) %>%
+  filter(datetime < year2_stop & datetime > year2_start) %>%
+  select(Site, plot, grid, pH, collection_temp_C, datetime, tz, evacuation_date, flag)
 
 write_csv(porewater_pH, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_pH_L1_2023.csv")
 
