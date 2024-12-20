@@ -204,7 +204,8 @@ icp_clean_wflags_meta <- icp_clean_wflags %>%
   left_join(sample_key_merging, by = c("Plot","Timepoint")) %>%
   mutate(date= case_when(is.na(date) ~ stringr::str_extract(sample_name, "[0-9]{8}"),
                   TRUE ~ date)) %>%
-    mutate(date = lubridate::as_date(date, format = "%Y%m%d"))
+    mutate(date = lubridate::as_date(date, format = "%Y%m%d")) %>%
+    mutate(across(where(is.numeric), ~ round(.x, 2)))
 
 knitr::kable(icp_clean_wflags_meta)  %>%
   kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
@@ -217,7 +218,7 @@ knitr::kable(icp_clean_wflags_meta)  %>%
 
 l1_icp_pw_pooled_2022 <- icp_clean_wflags_meta %>%
   filter(Grid == "POOL") %>%
-  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag)
+  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag) 
 
 knitr::kable(l1_icp_pw_pooled_2022)  %>%
   kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
@@ -226,7 +227,7 @@ knitr::kable(l1_icp_pw_pooled_2022)  %>%
 #Soure water: 
 l1_icp_source_2022 <- icp_clean_wflags_meta %>%
   filter(grepl("SOURCE|ESTUARY|BARGE", Grid))%>%
-  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag)
+  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag) 
 
 knitr::kable(l1_icp_source_2022) %>%
   kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
