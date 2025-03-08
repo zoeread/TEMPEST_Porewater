@@ -1,0 +1,19 @@
+site,plot,grid,datetime,doc_mg_l,tdn_mg_l,doc_flag,tdn_flag
+TMP,Freshwater,SOURCE,2023-06-06T17:26:00Z,0.35,0.09,blank is ≥ 25% of sample value,blank is ≥ 25% of sample value
+TMP,Freshwater,SOURCE,2023-06-06T19:11:00Z,0.35,0.1,blank is ≥ 25% of sample value,blank is ≥ 25% of sample value
+TMP,Freshwater,SOURCE,2023-06-06T11:18:00Z,0.48,0.15,blank is ≥ 25% of sample value,blank is ≥ 25% of sample value
+TMP,Freshwater,SOURCE,2023-06-07T10:11:00Z,0.41,0.09,blank is ≥ 25% of sample value,blank is ≥ 25% of sample value
+TMP,Freshwater,SOURCE,2023-06-07T17:00:00Z,0.36,0.09,blank is ≥ 25% of sample value,blank is ≥ 25% of sample value
+TMP,Freshwater,SOURCE,2023-06-07T19:19:00Z,0.29,0.06,blank is ≥ 25% of sample value,blank is ≥ 25% of sample value
+TMP,Estuarine-water,SOURCE,2023-06-07T10:21:00Z,5.2,0.44,NA,NA
+TMP,ESTUARY,ESTUARY,2023-06-06T10:32:00Z,4.57,0.37,NA,NA
+TMP,Estuarine-water,SOURCE,2023-06-06T11:09:00Z,2.37,0.26,NA,blank is ≥ 25% of sample value
+TMP,Estuarine-water,SOURCE,2023-06-06T17:01:00Z,4.84,0.36,NA,NA
+TMP,Estuarine-water,SOURCE,2023-06-06T19:02:00Z,5.03,0.37,NA,NA
+TMP,ESTUARY,ESTUARY,2023-06-06T16:36:00Z,5.06,0.44,NA,NA
+TMP,Estuarine-water,SOURCE,2023-06-07T16:55:00Z,6.03,0.37,NA,NA
+TMP,ESTUARY,ESTUARY,2023-06-07T11:10:00Z,4.18,0.31,NA,NA
+TMP,ESTUARY,ESTUARY,2023-06-07T17:46:00Z,4.73,0.35,NA,NA
+TMP,Estuarine-water,SOURCE,2023-06-07T19:15:00Z,4.85,0.41,NA,NA
+TMP,ESTUARY,ESTUARY,2023-06-06T19:24:00Z,5.07,0.37,NA,NA
+TMP,ESTUARY,ESTUARY,2023-06-07T21:00:00Z,4.48,0.36,NA,NA

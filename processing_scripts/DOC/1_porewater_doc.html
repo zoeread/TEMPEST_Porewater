@@ -11,7 +11,7 @@
 
 <meta name="author" content="AMP" />
 
-<meta name="date" content="2024-08-02" />
+<meta name="date" content="2025-03-07" />
 
 <title>TMP Porewater DOC for Manuscript</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">TMP Porewater DOC for Manuscript</h1>
 <h4 class="author">AMP</h4>
-<h4 class="date">2024-08-02</h4>
+<h4 class="date">2025-03-07</h4>
 
 </div>
 
@@ -375,9 +375,18 @@ Shimadzu TOC-L at PNNL MCRL and exports clean, Level 1 QC’ed data. Raw
 Data are read in from L0 folder on Google Drive.</p>
 <p>Created: 2022-01-15 by Peter Regier for EXCHANGE Updated: 2022-06-26
 by Allison Myers-Pigg for TEMPEST Updated and adapted for markdown:
-2024-02-10 by Allison Myers-Pigg for TEMPEST 2.0</p>
-<div id="pull-in-tmp-system-level-analysis-2022-event" class="section level2">
-<h2>Pull in TMP system level analysis (2022 event)</h2>
+2024-02-10 by Allison Myers-Pigg for TEMPEST 2.0 Updated for more
+accurate volumes/lysimeter timings: 2024-03-04 by Allison Myers-Pigg for
+Porewater Manuscripts</p>
+<p>#Setup</p>
+<div id="set-event-and-study-dates" class="section level2">
+<h2>Set event and study dates:</h2>
+</div>
+<div id="pull-in-tmp-system-level-analysis-2022-event-metadata" class="section level2">
+<h2>Pull in TMP system level analysis (2022 event) metadata</h2>
+</div>
+<div id="pull-in-active-porewater-tracking-inventory-sheet" class="section level2">
+<h2>pull in active porewater tracking inventory sheet:</h2>
 <!-- {r read in and save files from google drive} -->
 <!-- raw_data_path <- "./data_do_not_commit/doc_L0_fromdrive/" -->
 <!--  l0_file_list <- drive_ls("https://drive.google.com/drive/folders/1P65nP0CFY8V1iEY47O_fnNhvNS6D6eNt") -->
@@ -434,38 +443,6 @@ ideal world we would be doing the previous steps</h2>
 ## [25] &quot;/Users/myer056/GitHub/tempest-system-level-analysis/data/raw/DOC/20231012_Summary_Raw_NPOC_TN_COMPASS_TEMPEST_POOL_OCT_MONTHLY.txt&quot;             
 ## [26] &quot;/Users/myer056/GitHub/tempest-system-level-analysis/data/raw/DOC/20231115_Summary_Raw_NPOC_TN_COMPASS_TEMPEST_Monthly.txt&quot;                      
 ## [27] &quot;/Users/myer056/GitHub/tempest-system-level-analysis/data/raw/DOC/20231214_Summary_Raw_NPOC_TN_COMPASS_TEMPEST_Dec_Monthly.txt&quot;</code></pre>
-<div id="set-the-study-dates" class="section level3">
-<h3>Set the study dates</h3>
-<p>Include this if you are only wanting to run the script for certain
-dates</p>
-<!-- Input your run dates of interest into the files_dates dataframe:  -->
-<!-- ```{r set dates for analysis, include=TRUE} -->
-<!-- #  -->
-<!-- # #files_dates = c( -->
-<!-- #                 "20220701", #2022  -->
-<!-- #                 "20220708", -->
-<!-- #                 "20220711", -->
-<!-- #                 "20220715", -->
-<!-- #                 "20220729", -->
-<!-- #                 "20220803", -->
-<!-- #                 "20220819", -->
-<!-- #                 "20220922", -->
-<!-- #                 "20221025", -->
-<!-- #                 "20221209", -->
-<!-- #                 "20230209", -->
-<!-- #                 "20230512", -->
-<!-- #                 "20230531", #2023 start -->
-<!-- #                 "20230608", -->
-<!-- #                 "20230609", -->
-<!-- #                 "20230622", -->
-<!-- #                 "20230706", -->
-<!-- #                 "20230824", -->
-<!-- #                 "20231010", -->
-<!-- #                 "20231012", -->
-<!-- #                 "20231115", -->
-<!-- #                 "20231214") -->
-<!-- ``` -->
-</div>
 </div>
 <div id="import-data" class="section level1">
 <h1>Import Data</h1>
@@ -485,6 +462,23 @@ dates</p>
 ##  8 20220715       0.26          0.03      0.07         0.01
 ##  9 20220729       0.29          0.07      0.03        NA   
 ## 10 20220803       0.4           0.07      0.1          0.06
+## # ℹ 17 more rows</code></pre>
+</div>
+<div id="check-out-check-standards" class="section level1">
+<h1>Check out check standards</h1>
+<pre><code>## # A tibble: 27 × 3
+##    rundate  percent_error_C_avg percent_error_C_sd
+##    &lt;chr&gt;                  &lt;dbl&gt;              &lt;dbl&gt;
+##  1 20220527               32.5               14.7 
+##  2 20220601               63.2                6.6 
+##  3 20220627                5.14               2.86
+##  4 20220629                8.43               4.74
+##  5 20220701               39.9               25.9 
+##  6 20220708               31.4                6.53
+##  7 20220711                9.5                3.39
+##  8 20220715               14.0                0.21
+##  9 20220729               10.5                6.17
+## 10 20220803               13.4                9.67
 ## # ℹ 17 more rows</code></pre>
 </div>
 <div id="flag-sketch-data" class="section level1">
@@ -518,8 +512,10 @@ the values, and then removed as a “Pooled” sample.</p>
 <pre><code>## # A tibble: 0 × 6
 ## # ℹ 6 variables: sample_name &lt;chr&gt;, rundate &lt;chr&gt;, doc_mg_l &lt;dbl&gt;,
 ## #   tdn_mg_l &lt;dbl&gt;, npoc_flag &lt;chr&gt;, tdn_flag &lt;chr&gt;</code></pre>
-<pre><code>## # A tibble: 32 × 6
-## # Groups:   sample_name [16]
+<p>#MANUALLY Fix sample names and see if there were multiple of the same
+sample split for some reason run:</p>
+<pre><code>## # A tibble: 34 × 6
+## # Groups:   sample_name [17]
 ##    sample_name       rundate  doc_mg_l tdn_mg_l npoc_flag tdn_flag
 ##    &lt;chr&gt;             &lt;chr&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;   
 ##  1 TMP_C_C6_20220518 20220527     8.2      0.33 &lt;NA&gt;      &lt;NA&gt;    
@@ -532,8 +528,15 @@ the values, and then removed as a “Pooled” sample.</p>
 ##  8 TMP_C_E3_20220518 20220527     9.86     0.5  &lt;NA&gt;      &lt;NA&gt;    
 ##  9 TMP_C_F6_20220518 20220527     6.89     0.33 &lt;NA&gt;      &lt;NA&gt;    
 ## 10 TMP_C_F6_20220518 20220527     8.03     0.34 &lt;NA&gt;      &lt;NA&gt;    
-## # ℹ 22 more rows</code></pre>
-<pre><code>## # A tibble: 563 × 6
+## # ℹ 24 more rows</code></pre>
+<div id="clean-reps-to-integrate-back-in-with-rest-of-dataset" class="section level3">
+<h3>Clean reps to integrate back in with rest of dataset</h3>
+<p>need to remove a rep if the following conditions are met: 1) Flag
+says “high blank” &amp; 2) Values are &gt; 20% apart If second condition
+is met but the first is not met, need to flag with “Inconsistent reps”
+If they are close in value, regardless of condition for 1), can be
+confident that they look good.</p>
+<pre><code>## # A tibble: 562 × 6
 ##    sample_name                rundate  doc_mg_l tdn_mg_l npoc_flag tdn_flag
 ##    &lt;chr&gt;                      &lt;chr&gt;       &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;   
 ##  1 TMP_C_F4_20220518          20220527     8.13     0.47 &lt;NA&gt;      &lt;NA&gt;    
@@ -542,74 +545,116 @@ the values, and then removed as a “Pooled” sample.</p>
 ##  4 TMP_FW_C3_20220518         20220527     7.01     0.33 &lt;NA&gt;      &lt;NA&gt;    
 ##  5 TMP_FW_H6_20220520         20220527     9.03     0.45 &lt;NA&gt;      &lt;NA&gt;    
 ##  6 TMP_FW_E3_20220518         20220527    13.8      0.6  &lt;NA&gt;      &lt;NA&gt;    
-##  7 TMP_SW_20220523_pooled     20220601    13.0      0.51 &lt;NA&gt;      &lt;NA&gt;    
-##  8 TMP_FW_20220523_pooled     20220601     9.16     0.5  &lt;NA&gt;      &lt;NA&gt;    
-##  9 TMP_C_20220523_pooled      20220601    12.6      0.64 &lt;NA&gt;      &lt;NA&gt;    
+##  7 TMP_SW_20220523_POOL       20220601    13.0      0.51 &lt;NA&gt;      &lt;NA&gt;    
+##  8 TMP_FW_20220523_POOL       20220601     9.16     0.5  &lt;NA&gt;      &lt;NA&gt;    
+##  9 TMP_C_20220523_POOL        20220601    12.6      0.64 &lt;NA&gt;      &lt;NA&gt;    
 ## 10 TMP_FW_PW_I5_15cm_20220613 20220627    12.7      0.78 &lt;NA&gt;      &lt;NA&gt;    
-## # ℹ 553 more rows</code></pre>
+## # ℹ 552 more rows</code></pre>
+</div>
 </div>
 <div id="clean-data" class="section level1">
 <h1>Clean data</h1>
 <p><strong>someday you should make this a function</strong></p>
-<pre><code>## # A tibble: 1,373 × 17
+</div>
+<div id="add-in-metadata" class="section level1">
+<h1>Add in metadata</h1>
+<pre><code>## # A tibble: 12 × 21
 ##    sample_name    rundate doc_mg_l tdn_mg_l npoc_flag tdn_flag Event Plot  Grid 
 ##    &lt;chr&gt;          &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
-##  1 TMP_C_F4_2022… 202205…     8.13     0.47 &lt;NA&gt;      &lt;NA&gt;     TMP   C     F4   
-##  2 TMP_C_H6_2022… 202205…    13.9      0.47 &lt;NA&gt;      &lt;NA&gt;     TMP   C     H6   
-##  3 TMP_C_D5_2022… 202205…    18.4      0.66 &lt;NA&gt;      &lt;NA&gt;     TMP   C     D5   
-##  4 TMP_FW_C3_202… 202205…     7.01     0.33 &lt;NA&gt;      &lt;NA&gt;     TMP   FW    C3   
-##  5 TMP_FW_H6_202… 202205…     9.03     0.45 &lt;NA&gt;      &lt;NA&gt;     TMP   FW    H6   
-##  6 TMP_FW_E3_202… 202205…    13.8      0.6  &lt;NA&gt;      &lt;NA&gt;     TMP   FW    E3   
-##  7 TMP_SW_202205… 202206…    13.0      0.51 pooled s… pooled … TMP   SW    POOL 
-##  8 TMP_FW_202205… 202206…     9.16     0.5  pooled s… pooled … TMP   FW    POOL 
-##  9 TMP_C_2022052… 202206…    12.6      0.64 pooled s… pooled … TMP   C     POOL 
-## 10 TMP_FW_PW_I5_… 202206…    12.7      0.78 &lt;NA&gt;      &lt;NA&gt;     TMP   FW    I5   
-## # ℹ 1,363 more rows
-## # ℹ 8 more variables: Timepoint &lt;chr&gt;, Pool_Timepoint &lt;chr&gt;, date &lt;date&gt;,
+##  1 TMP_SW_E3_202… 202208…    18.8      0.73 &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… E3   
+##  2 TMP_FW_F4_202… 202209…    13.3      0.75 &lt;NA&gt;      &lt;NA&gt;     TMP   Fres… F4   
+##  3 TMP_C_C6_2022… 202210…    11.5      0.38 &lt;NA&gt;      &lt;NA&gt;     TMP   Cont… C6   
+##  4 TMP_SW_H6_202… 202305…    36.4      1.08 &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… H6   
+##  5 TMP_SW_H6_202… 202306…     5.19     0.42 &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… H6   
+##  6 TMP_C_C3_2023… 202307…    11.7      0.36 &lt;NA&gt;      &lt;NA&gt;     TMP   Cont… C3   
+##  7 TMP_C_H6_2023… 202308…    17.5      0.65 &lt;NA&gt;      &lt;NA&gt;     TMP   Cont… H6   
+##  8 TMP_SW_I5_202… 202308…    18.8      1.55 &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… I5   
+##  9 TMP_SW_C6_202… 202308…    46.2      1.63 &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… C6   
+## 10 TMP_SW_H3_202… 202308…    40.7      1.35 &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… H3   
+## 11 TMP_SW_E3_202… 202308…    29.3      1    &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… E3   
+## 12 TMP_SW_C6_202… 202312…    12.3      0.56 &lt;NA&gt;      &lt;NA&gt;     TMP   Estu… C6   
+## # ℹ 12 more variables: Timepoint &lt;chr&gt;, Pool_Timepoint &lt;chr&gt;, date &lt;date&gt;,
 ## #   time &lt;chr&gt;, tz &lt;chr&gt;, evacuation_date &lt;date&gt;, collection_date &lt;date&gt;,
-## #   datetime &lt;dttm&gt;</code></pre>
-<!-- ##### partially summarized except for june, no event. might be useful for plotting, not sure yet -->
-<!-- PW_npoc_wflags_metadata_summarized_noevents <- PW_npoc_wflags_metadata  %>% -->
-<!--   filter(date < endstudydate & date > startstudydate) %>% -->
-<!--   filter(datetime < WaterDeliveryStart2022 | datetime > WaterDeliveryStop2022) %>% -->
-<!--   filter(datetime < WaterDeliveryStart1 | datetime > WaterDeliveryStop1) %>% -->
-<!--   filter(datetime < WaterDeliveryStart2 | datetime > WaterDeliveryStop2) %>% -->
-<!--   filter(Grid != "POOL") %>% -->
-<!--   filter(!sample_name %in% "Lysimeter Empty") %>% -->
-<!--   filter(!npoc_flag %in% "omitted for high dilution and blank values") %>% -->
-<!--   filter(!tdn_flag %in% "omitted for high dilution and blank values") %>% -->
-<!--   mutate( -->
-<!--          Group=case_when(lubridate::month(date) != 6 ~ as.character(paste(lubridate::year(date), lubridate::month(date), 1, sep = "-")), -->
-<!--                          lubridate::month(date) == 6 ~ as.character(date))) %>% -->
-<!--   mutate(Group = lubridate::as_date(Group)) %>% -->
-<!--   group_by(plot, Group) %>%  -->
-<!--   summarise(n=n(), -->
-<!--             doc_mg_l_sd = round(sd(doc_mg_l, na.rm = TRUE), 2), -->
-<!--             doc_mg_l_se = round(std.error(doc_mg_l, na.rm=TRUE), 2), -->
-<!--             doc_mg_l = round(mean(doc_mg_l, na.rm = TRUE), 2), -->
-<!--             tdn_mg_l_sd = round(sd(tdn_mg_l, na.rm = TRUE), 2), -->
-<!--             tdn_mg_l_se = round(std.error(tdn_mg_l, na.rm=TRUE), 2), -->
-<!--             tdn_mg_l = round(mean(tdn_mg_l, na.rm = TRUE),2), -->
-<!--             date = min(date), -->
-<!--             .groups = "drop") %>% -->
-<!--   select(plot, Group, date, n, doc_mg_l, doc_mg_l_sd, doc_mg_l_se, tdn_mg_l, tdn_mg_l_sd, tdn_mg_l_se)  -->
+## #   evacuation_datetime &lt;dttm&gt;, collection_datetime &lt;dttm&gt;,
+## #   elapsed_time &lt;drtn&gt;, Total_Aliquot_Volume_mL &lt;dbl&gt;, evacuation_time &lt;chr&gt;</code></pre>
 </div>
-<div id="write-data" class="section level1">
-<h1>Write data</h1>
-<div id="work-up-for-manuscript" class="section level3">
-<h3>Work up for Manuscript</h3>
+<div id="pull-out-and-save-the-grid-volumes---dont-need-to-write-this-into-the-l1-doc-dataframe." class="section level1">
+<h1>Pull out and save the grid volumes - don’t need to write this into
+the L1 DOC dataframe.</h1>
 <p><strong><em>Note, this is set up if you run the markdown that it
 won’t actually save the files, to prevent folks from overwritting
 version of record files when getting familiar with the
 script.</em></strong></p>
-<ol style="list-style-type: decimal">
-<li><p>Save the source and pooled DOC data separately from the grid
-resolved:</p></li>
-<li><p>Save the grid resolved data:</p></li>
-</ol>
+<p>Need to get pooled volumes for 2022 event to finish cleaning pooled
+dataframe:</p>
 </div>
+<div id="write-data" class="section level1">
+<h1>Write data</h1>
+<p><strong><em>Note, this is set up if you run the markdown that it
+won’t actually save the files, to prevent folks from overwritting
+version of record files when getting familiar with the
+script.</em></strong></p>
 <div id="write-for-google-drive-l1" class="section level2">
 <h2>Write for Google Drive L1</h2>
+<p>Naming: SITE_SAMPLETYPE_ORG_ANALYSISTYPE_YEAR_LEVEL.csv Include ORG
+only if applicable</p>
+<p>Naming: SITE_SAMPLETYPE_ORG_ANALYSISTYPE_YEAR_LEVEL.csv Include ORG
+only if applicable</p>
+<!-- # npoc_wflags_metadata <- npoc_wflags_metadata.1 %>% -->
+<!-- #    full_join(pwsite_key_all, by=c("Plot","Grid", "date")) %>%  #gap fill with NAs when lysimeters were dry for that sampling timepoint -->
+<!-- #   mutate(time = case_when(is.na(time) ~ stringr::str_extract(sample_name, "(?<=[0-9]{8}_)\\d{4}"), -->
+<!-- #                           TRUE ~ time), -->
+<!-- #          time = str_replace(time, '\\d+', function(m) str_pad(m, 6, pad = '0', side = ("right"))) -->
+<!-- #          ) %>% -->
+<!-- #   mutate(time = case_when(is.na(time) ~ "115900",  -->
+<!-- #                           TRUE ~ time)) %>% #if no time recorded in the metadata sheet, fill in with noon -->
+<!-- #   mutate(time= strptime(time, format ="%H%M%S"), -->
+<!-- #          time = strftime(time, "%H:%M:%S")) %>% -->
+<!-- #    mutate(Timepoint = case_when(is.na(Timepoint) & date == "2022-07-18" ~ "T5", -->
+<!-- #                              is.na(Timepoint) & date == "2022-07-21" ~ "T5", -->
+<!-- #                              is.na(Timepoint) & date == "2022-06-15" ~ "T0", -->
+<!-- #                                       TRUE ~ Timepoint), -->
+<!-- #                date = case_when(is.na(sample_name) & Timepoint == "T0" ~ lubridate::as_date("2022-06-20"), -->
+<!-- #                           is.na(sample_name) & Timepoint == "T1" ~ lubridate::as_date("2022-06-22"), -->
+<!-- #                           is.na(sample_name) & Timepoint == "T2" ~ lubridate::as_date("2022-06-22"), -->
+<!-- #                           is.na(sample_name) & Timepoint == "T3" ~ lubridate::as_date("2022-06-23"), -->
+<!-- #                           is.na(sample_name) & Timepoint == "T4" ~ lubridate::as_date("2022-06-24"), -->
+<!-- #                           is.na(sample_name) & Timepoint == "T5" ~ lubridate::as_date("2022-07-21"), -->
+<!-- #                           TRUE ~ date)) %>% -->
+<!-- #   mutate(datetime = as.POSIXct(paste(date, time), format = "%Y-%m-%d %H:%M:%S")) -->
+<!-- #  -->
+<!-- # print(npoc_wflags_metadata) -->
+<!-- # ```{r manuscript specific final write out of pw, eval=FALSE} -->
+<!-- # for_fluxes <- PW_npoc_wflags_metadata_grids_only %>% -->
+<!-- #   ungroup() %>% -->
+<!-- #   rename(grid = Grid, -->
+<!-- #          collection_datetime = datetime) %>% -->
+<!-- #   select(Event, plot, grid, sample_name, doc_mg_l, tdn_mg_l, evacuation_date, collection_datetime, tz) %>% -->
+<!-- #   #manual entry of missing evacuation information from the notes:  -->
+<!-- #   mutate(evacuation_date = case_when( -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-05-18") ~ as.Date("2022-05-12"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-05-20")  ~ as.Date("2022-05-12"),  -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-13")  ~ as.Date("2022-06-09"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-15")  ~ as.Date("2022-06-09"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-20") ~ as.Date("2022-06-18"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-22") ~ as.Date("2022-06-22"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-23") ~ as.Date("2022-06-22"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2022-06-24") ~ as.Date("2022-06-23"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2023-06-05") ~ as.Date("2023-06-03"), -->
+<!-- #     is.na(evacuation_date) & str_detect(collection_datetime, "2023-10-05") ~ as.Date("2023-10-02"), -->
+<!-- #     TRUE ~ evacuation_date)) %>% -->
+<!-- #   filter(collection_datetime != "2022-05-23 11:59:00") %>% -->
+<!-- #   mutate(set_tz = with_tz(collection_datetime, tzone = "America/New_York"), -->
+<!-- #          is_dst = dst(set_tz), -->
+<!-- #     tz = case_when(is.na(tz) &  is_dst == TRUE ~ "EDT", -->
+<!-- #                    is.na(tz) &  is_dst != TRUE ~ "EST", -->
+<!-- #                    TRUE ~ tz)) %>% -->
+<!-- #   select(-set_tz, -is_dst) -->
+<!-- #  -->
+<!-- # write_csv(for_fluxes, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_GRIDSONLY_NPOC_TDN_L1_May2022-Dec2023.csv") -->
+<!-- #  -->
+<!-- # saveRDS(for_fluxes, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_GRIDSONLY_NPOC_TDN_L1_May2022-Dec2023.rds") -->
+<!-- # ``` -->
 </div>
 </div>
 
