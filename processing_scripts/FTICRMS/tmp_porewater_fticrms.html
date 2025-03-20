@@ -11,7 +11,7 @@
 
 <meta name="author" content="AMP" />
 
-<meta name="date" content="2024-09-26" />
+<meta name="date" content="2025-03-20" />
 
 <title>TEMPEST Porewater FTICRMS Processing</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">TEMPEST Porewater FTICRMS Processing</h1>
 <h4 class="author">AMP</h4>
-<h4 class="date">2024-09-26</h4>
+<h4 class="date">2025-03-20</h4>
 
 </div>
 
@@ -426,7 +426,7 @@ sample_key &lt;- readRDS(&quot;~/GitHub/tempest-system-level-analysis/data/for p
   mutate(Grid = case_when(is.na(Grid) ~ &quot;POOL&quot;,
                           TRUE ~ Grid))
   
-non_event_sample_key &lt;- readxl::read_excel(&quot;~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx&quot;, skip=3, sheet=&quot;Individual&quot;) %&gt;%
+non_event_sample_key &lt;- readxl::read_excel(&quot;~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx&quot;, skip=3, sheet=&quot;Porewater - Individual&quot;) %&gt;%
   select(Sample_ID, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_End_Time_24hrs, EST_EDT) %&gt;%
   filter(str_detect(Sample_ID, &quot;DOC&quot;)) %&gt;%
   rename(sample_name = Sample_ID,
@@ -518,7 +518,6 @@ sample_list_allmeta &lt;- sample_list %&gt;%
 <pre><code>##   &lt;https://gargle.r-lib.org/articles/non-interactive-auth.html&gt;</code></pre>
 <pre><code>## ℹ The googledrive package is using a cached token for
 ##   &#39;allison.myers-pigg@pnnl.gov&#39;.</code></pre>
-<pre><code>## Auto-refreshing stale OAuth token.</code></pre>
 <pre><code>## File downloaded:</code></pre>
 <pre><code>## • &#39;xtra_COMPASS_60602_2023_Report.csv&#39; &lt;id: 1_KCVtReIDJAhW5IZqxGCSwMuVcgMF701&gt;</code></pre>
 <pre><code>## Saved locally as:</code></pre>
@@ -731,6 +730,10 @@ fticr_data &lt;- merge(x=meta_blank_corr, y=data_long_key_counts_blank_subtracte
     rename(plot= Plot,
            grid = Grid,
          collection_datetime = datetime) %&gt;%
+     mutate(plot = case_when(plot == &quot;SW&quot; ~ &quot;Saltwater&quot;,
+                          plot == &quot;C&quot; ~ &quot;Control&quot;,
+                          plot == &quot;FW&quot; ~ &quot;Freshwater&quot;,
+                          TRUE ~ plot)) %&gt;%
   select(Event, plot, grid, sample_name, formula, presence, EMSL_class:DBE_C, date, time, collection_datetime, tz)</code></pre>
 </div>
 <div id="step-8.-write-l1-data" class="section level2">
@@ -739,18 +742,18 @@ fticr_data &lt;- merge(x=meta_blank_corr, y=data_long_key_counts_blank_subtracte
 fticr_data_porewater &lt;- fticr_data %&gt;%
   filter(str_detect(sample_name, regex(&quot;POOL&quot;, ignore_case = TRUE)))
 
-write_csv(fticr_data_porewater, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_FTICRMS_L1_May2022-May2023.csv&quot;)
+write_csv(fticr_data_porewater, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_POOL_FTICRMS_May2022-May2023_L1.csv&quot;)
 
-saveRDS(fticr_data_porewater, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_FTICRMS_L1_May2022-May2023.rds&quot;)
+saveRDS(fticr_data_porewater, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_POOL_FTICRMS_May2022-May2023_L1.rds&quot;)
 
 #source water data
 fticr_data_source &lt;- fticr_data %&gt;%
   filter(str_detect(sample_name, regex(&quot;SOURCE&quot;, ignore_case = TRUE)))
 
 
-write_csv(fticr_data_source, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_L1_May2022-May2023.csv&quot;)
+write_csv(fticr_data_source, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_May2022-May2023_L1.csv&quot;)
 
-saveRDS(fticr_data_source, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_L1_May2022-May2023.rds&quot;)</code></pre>
+saveRDS(fticr_data_source, &quot;~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_May2022-May2023_L1.rds&quot;)</code></pre>
 </div>
 <div id="step-9.-compute-relative-abundance-dataframe" class="section level2">
 <h2>Step 9. Compute relative abundance dataframe</h2>
@@ -776,7 +779,7 @@ need to explore this to see how I want to handle it moving forward.</h3>
 <p>TMP_SW_POOL_20220721</p>
 <pre class="r"><code>fticr_relabund %&gt;% 
   filter(grid == &quot;POOL&quot;) %&gt;%
-  filter(plot == &quot;SW&quot;) %&gt;%
+  filter(plot == &quot;Saltwater&quot;) %&gt;%
   arrange(collection_datetime) %&gt;%
   group_by(plot, grid, collection_datetime) %&gt;%
   mutate(group= cur_group_id()) %&gt;%

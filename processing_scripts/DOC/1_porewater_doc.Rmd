@@ -68,7 +68,7 @@ WaterDeliveryStop1 = as.POSIXct("2023-06-06 14:30:00", tz = "EST")
 WaterDeliveryStart2 = as.POSIXct("2023-06-07 05:30:00", tz = "EST")
 WaterDeliveryStop2 = as.POSIXct("2023-06-07 14:30:00", tz = "EST")
 
-plot_order <- c('Control', 'Freshwater','Estuarine-water')
+plot_order <- c('Control', 'Freshwater','Saltwater')
 time_order <- c('Pre', 'Mid','Post')
 ```
 
@@ -122,10 +122,10 @@ non_event_sample_key_grids <- readxl::read_excel(file_path, skip=3, sheet="Porew
     TRUE ~ evacuation_date)) %>% 
     fill(evacuation_date, collection_date) %>%
     mutate(plot = case_when(plot == "C" ~ "Control",
-                           plot == "SW" ~ "Estuarine-water",
+                           plot == "SW" ~ "Saltwater",
                            plot == "FW" ~ "Freshwater",
                            plot == "Contol" ~ "Control",
-                           plot == "Saltwater" ~ "Estuarine-water",
+                           plot == "Saltwater" ~ "Saltwater",
                           TRUE ~ plot)) %>%
   group_by(plot, grid, evacuation_date, collection_date) %>%
   #fill down exact group matches by group missing values:
@@ -219,9 +219,9 @@ pooled_vols <- readxl::read_excel(file_path, skip=4, sheet="Porewater - Pooled")
     names_to = "grid",
     values_to = "Volume_mL") %>%
    mutate(plot = case_when(Plot == "C" ~ "Control",
-                           Plot == "SW" ~ "Estuarine-water",
+                           Plot == "SW" ~ "Saltwater",
                            Plot == "FW" ~ "Freshwater",
-                           Plot == "Saltwater" ~ "Estuarine-water",
+                           Plot == "Saltwater" ~ "Saltwater",
                           TRUE ~ Plot),
           grid = str_remove(grid, "Grid_")) %>%
   rename(evacuation_date = Evacuation_date_YYYMMDD,
@@ -758,7 +758,7 @@ npoc_wflags_metadata.1 <-  npoc_flags %>%
                           TRUE ~ date)) %>%
   mutate(Plot = case_when(Plot == "FW" ~ "Freshwater",
                           Plot == "C" ~ "Control",
-                          Plot == "SW" ~ "Estuarine-water",
+                          Plot == "SW" ~ "Saltwater",
                           TRUE ~ Plot))
   
 
@@ -879,7 +879,7 @@ saveRDS(grid_volumes, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_Aliquo
 pwsite_key_all <- pwsite_key %>% tidyr::expand(Plot, Grid, date = unique(porewater_grids_wmeta_filled$date)) %>% drop_na() %>%
   mutate(Plot = case_when(Plot == "FW" ~ "Freshwater",
                           Plot == "C" ~ "Control",
-                          Plot == "SW" ~ "Estuarine-water",
+                          Plot == "SW" ~ "Saltwater",
                           TRUE ~ Plot)) %>%
   mutate(date = lubridate::as_date(date, format = "%Y%m%d"))
 
@@ -920,7 +920,7 @@ pooled_2022_vols <- readRDS("~/GitHub/tempest-system-level-analysis/data/for pro
   rename(date = Date,
          Total_Volume_mL = total_pooled_volume) %>%
    mutate(Plot = case_when(Plot == "C" ~ "Control",
-                           Plot == "SW" ~ "Estuarine-water",
+                           Plot == "SW" ~ "Saltwater",
                            Plot == "FW" ~ "Freshwater",
                           TRUE ~ Plot))
   

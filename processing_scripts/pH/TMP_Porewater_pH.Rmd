@@ -71,7 +71,7 @@ sample_key_merging <- sample_key %>%
   rename(plot = Plot,
           grid = Grid) %>%
    mutate(date = lubridate::as_date(as.character(date), format = "%Y%m%d")) %>%
-   mutate(plot = case_when(plot == "SW" ~ "Estuarine-water",
+   mutate(plot = case_when(plot == "SW" ~ "Saltwater",
                           plot == "C" ~ "Control",
                           plot == "FW" ~ "Freshwater",
                           TRUE ~ plot)) %>%
@@ -111,9 +111,9 @@ pH <- pH_raw %>%
   mutate(collection_temp_C= as.numeric(collection_temp_C)) %>%
   mutate(flag = case_when(is.na(collection_temp_C) ~ "temperature not recorded",
                           TRUE ~ NA)) %>%
-   mutate(plot = case_when(plot == "Saltwater" ~ "Estuarine-water",
-                          TRUE ~ plot),
-          grid = case_when(grid == "Source" ~ "SOURCE",
+  # mutate(plot = case_when(plot == "Saltwater" ~ "Estuarine-water", Plot names should stay Saltwater per slack convo
+  #                        TRUE ~ plot),
+          mutate(grid = case_when(grid == "Source" ~ "SOURCE",
                            TRUE ~ grid)
             ) %>%
   select(Site, plot, grid, pH, collection_temp_C, datetime, tz, flag)
@@ -148,7 +148,7 @@ left_join(sample_key_merging, by= c("plot","date"), suffix = c("", ".fill")) %>%
   filter(datetime < year2_stop & datetime > year2_start) %>%
   select(Site, plot, grid, pH, collection_temp_C, datetime, tz, evacuation_date, flag)
 
-write_csv(porewater_pH, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_pH_L1_2023.csv")
+write_csv(porewater_pH, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_pH_2023_L1.csv")
 
 ```
 
@@ -158,7 +158,7 @@ source_pH <- pH %>%
   filter(grid == "SOURCE") %>%
   filter(datetime < year2_stop & datetime > year2_start)
 
-write_csv(source_pH, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SourceWater_pH_L1_2023.csv")
+write_csv(source_pH, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SOURCE_pH_2023_L1.csv")
 
 ```
 

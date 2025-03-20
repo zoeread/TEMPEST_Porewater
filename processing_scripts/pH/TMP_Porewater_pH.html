@@ -11,7 +11,7 @@
 
 <meta name="author" content="AMP" />
 
-<meta name="date" content="2024-12-06" />
+<meta name="date" content="2025-03-20" />
 
 <title>Porewater pH</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">Porewater pH</h1>
 <h4 class="author">AMP</h4>
-<h4 class="date">2024-12-06</h4>
+<h4 class="date">2025-03-20</h4>
 
 </div>
 
@@ -400,7 +400,7 @@ sample_key_merging &lt;- sample_key %&gt;%
   rename(plot = Plot,
           grid = Grid) %&gt;%
    mutate(date = lubridate::as_date(as.character(date), format = &quot;%Y%m%d&quot;)) %&gt;%
-   mutate(plot = case_when(plot == &quot;SW&quot; ~ &quot;Estuarine-water&quot;,
+   mutate(plot = case_when(plot == &quot;SW&quot; ~ &quot;Saltwater&quot;,
                           plot == &quot;C&quot; ~ &quot;Control&quot;,
                           plot == &quot;FW&quot; ~ &quot;Freshwater&quot;,
                           TRUE ~ plot)) %&gt;%
@@ -437,9 +437,9 @@ pH_raw &lt;- readxl::read_excel(&quot;~/GitHub/TEMPEST-1-porewater/data_do_not_c
   mutate(collection_temp_C= as.numeric(collection_temp_C)) %&gt;%
   mutate(flag = case_when(is.na(collection_temp_C) ~ &quot;temperature not recorded&quot;,
                           TRUE ~ NA)) %&gt;%
-   mutate(plot = case_when(plot == &quot;Saltwater&quot; ~ &quot;Estuarine-water&quot;,
-                          TRUE ~ plot),
-          grid = case_when(grid == &quot;Source&quot; ~ &quot;SOURCE&quot;,
+  # mutate(plot = case_when(plot == &quot;Saltwater&quot; ~ &quot;Estuarine-water&quot;, Plot names should stay Saltwater per slack convo
+  #                        TRUE ~ plot),
+          mutate(grid = case_when(grid == &quot;Source&quot; ~ &quot;SOURCE&quot;,
                            TRUE ~ grid)
             ) %&gt;%
   select(Site, plot, grid, pH, collection_temp_C, datetime, tz, flag)</code></pre>
@@ -468,12 +468,12 @@ left_join(sample_key_merging, by= c(&quot;plot&quot;,&quot;date&quot;), suffix =
   filter(datetime &lt; year2_stop &amp; datetime &gt; year2_start) %&gt;%
   select(Site, plot, grid, pH, collection_temp_C, datetime, tz, evacuation_date, flag)
 
-write_csv(porewater_pH, &quot;~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_pH_L1_2023.csv&quot;)</code></pre>
+write_csv(porewater_pH, &quot;~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_pH_2023_L1.csv&quot;)</code></pre>
 <pre class="r"><code>source_pH &lt;- pH %&gt;%
   filter(grid == &quot;SOURCE&quot;) %&gt;%
   filter(datetime &lt; year2_stop &amp; datetime &gt; year2_start)
 
-write_csv(source_pH, &quot;~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SourceWater_pH_L1_2023.csv&quot;)</code></pre>
+write_csv(source_pH, &quot;~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SOURCE_pH_2023_L1.csv&quot;)</code></pre>
 </div>
 </div>
 

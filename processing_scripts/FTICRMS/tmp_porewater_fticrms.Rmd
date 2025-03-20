@@ -91,7 +91,7 @@ sample_key <- readRDS("~/GitHub/tempest-system-level-analysis/data/for processin
   mutate(Grid = case_when(is.na(Grid) ~ "POOL",
                           TRUE ~ Grid))
   
-non_event_sample_key <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", skip=3, sheet="Individual") %>%
+non_event_sample_key <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", skip=3, sheet="Porewater - Individual") %>%
   select(Sample_ID, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_End_Time_24hrs, EST_EDT) %>%
   filter(str_detect(Sample_ID, "DOC")) %>%
   rename(sample_name = Sample_ID,
@@ -357,6 +357,10 @@ fticr_data <- merge(x=meta_blank_corr, y=data_long_key_counts_blank_subtracted, 
     rename(plot= Plot,
            grid = Grid,
          collection_datetime = datetime) %>%
+     mutate(plot = case_when(plot == "SW" ~ "Saltwater",
+                          plot == "C" ~ "Control",
+                          plot == "FW" ~ "Freshwater",
+                          TRUE ~ plot)) %>%
   select(Event, plot, grid, sample_name, formula, presence, EMSL_class:DBE_C, date, time, collection_datetime, tz)
 
 ```
@@ -369,18 +373,18 @@ fticr_data <- merge(x=meta_blank_corr, y=data_long_key_counts_blank_subtracted, 
 fticr_data_porewater <- fticr_data %>%
   filter(str_detect(sample_name, regex("POOL", ignore_case = TRUE)))
 
-write_csv(fticr_data_porewater, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_FTICRMS_L1_May2022-May2023.csv")
+write_csv(fticr_data_porewater, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_POOL_FTICRMS_May2022-May2023_L1.csv")
 
-saveRDS(fticr_data_porewater, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_FTICRMS_L1_May2022-May2023.rds")
+saveRDS(fticr_data_porewater, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_POOL_FTICRMS_May2022-May2023_L1.rds")
 
 #source water data
 fticr_data_source <- fticr_data %>%
   filter(str_detect(sample_name, regex("SOURCE", ignore_case = TRUE)))
 
 
-write_csv(fticr_data_source, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_L1_May2022-May2023.csv")
+write_csv(fticr_data_source, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_May2022-May2023_L1.csv")
 
-saveRDS(fticr_data_source, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_L1_May2022-May2023.rds")
+saveRDS(fticr_data_source, "~/GitHub/TEMPEST-1-porewater/processed data/TMP_SOURCE_FTICRMS_May2022-May2023_L1.rds")
 
 ```
 
@@ -413,7 +417,7 @@ TMP_SW_POOL_20220721
 
 fticr_relabund %>% 
   filter(grid == "POOL") %>%
-  filter(plot == "SW") %>%
+  filter(plot == "Saltwater") %>%
   arrange(collection_datetime) %>%
   group_by(plot, grid, collection_datetime) %>%
   mutate(group= cur_group_id()) %>%

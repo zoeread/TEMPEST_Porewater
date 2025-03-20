@@ -84,7 +84,7 @@ file_path = "~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.
 
 drive_download(inventory_directory, path= file_path, overwrite = TRUE)
 
-non_event_sample_key <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", skip=3, sheet="Individual") %>%
+non_event_sample_key <- readxl::read_excel("~/GitHub/TEMPEST-1-porewater/data_do_not_commit/porewaterinventory.xlsx", skip=3, sheet="Porewater - Individual") %>%
   select(Sample_ID, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_End_Time_24hrs, EST_EDT) %>%
   filter(str_detect(Sample_ID, "DOC/CDOM|DOC")) %>%
   rename(sample_name = Sample_ID,
@@ -135,7 +135,7 @@ non_event_sample_key_merging <- non_event_sample_key %>%
 ```{r pooled} 
 
 
-pooled_sample_key<- readxl::read_excel(file_path, skip=4, sheet="Pooled") %>%
+pooled_sample_key<- readxl::read_excel(file_path, skip=4, sheet="Porewater - Pooled") %>%
   select(Sample_ID, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD) %>%
   mutate(Plot = stringr::str_extract(Sample_ID, 'FW|SW|C'),
          Grid = "POOL") %>%
@@ -317,7 +317,7 @@ eems_all_meta_dups_merged <- eems_all_meta_no_reps %>%
                           TRUE ~ Plot)) %>%
   mutate(plot = case_when(Plot == "FW" ~ "Freshwater",
                           Plot == "C" ~ "Control",
-                          Plot == "SW" ~ "Estuarine-water",
+                          Plot == "SW" ~ "Saltwater",
                           Plot == "ESTUARY" ~ "Estuary water",
                           TRUE ~ Plot))   %>%
   mutate(Grid = case_when(is.na(Grid) & Plot == "ESTUARY" ~ "BARGE",
@@ -422,9 +422,9 @@ knitr::kable(l1_porewatergrids_2023) %>% kableExtra::kable_styling("striped", fu
 
 ```{r write L1, eval=FALSE}
 
-write_csv(l1_porewatergrids_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2022.csv")
+write_csv(l1_porewatergrids_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDS_POOL_Indicies_CDOM_2022_L1.csv")
 
-write_csv(l1_porewatergrids_2023, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDSandPOOL_CDOM_Indicies_L1_2023.csv")
+write_csv(l1_porewatergrids_2023, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_GRIDS_POOL_Indicies_CDOM_2023_L1.csv")
 
 ```
 

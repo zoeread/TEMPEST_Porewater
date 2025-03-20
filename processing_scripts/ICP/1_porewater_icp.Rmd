@@ -218,7 +218,13 @@ knitr::kable(icp_clean_wflags_meta)  %>%
 
 l1_icp_pw_pooled_2022 <- icp_clean_wflags_meta %>%
   filter(Grid == "POOL") %>%
-  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag) 
+     mutate(Plot = case_when(Plot == "SW" ~ "Saltwater",
+                          Plot == "C" ~ "Control",
+                          Plot == "FW" ~ "Freshwater",
+                          TRUE ~ Plot)) %>%
+  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag) %>%
+  rename(plot = Plot,
+         grid = Grid)
 
 knitr::kable(l1_icp_pw_pooled_2022)  %>%
   kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
@@ -227,7 +233,13 @@ knitr::kable(l1_icp_pw_pooled_2022)  %>%
 #Soure water: 
 l1_icp_source_2022 <- icp_clean_wflags_meta %>%
   filter(grepl("SOURCE|ESTUARY|BARGE", Grid))%>%
-  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag) 
+     mutate(Plot = case_when(Plot == "SW" ~ "Saltwater",
+                          Plot == "C" ~ "Control",
+                          Plot == "FW" ~ "Freshwater",
+                          TRUE ~ Plot)) %>%
+  select(Event, Plot, Grid, date, sample_name, Na_mgL_Porewater_average:P_flag) %>%
+  rename(plot = Plot,
+         grid = Grid)
 
 knitr::kable(l1_icp_source_2022) %>%
   kable_styling(full_width = F, bootstrap_options = c("striped", "hover")) %>%
@@ -236,15 +248,15 @@ knitr::kable(l1_icp_source_2022) %>%
 
 # 7. write out
 ```{r write}
-write_csv(l1_icp_pw_pooled_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_POOL_ICP_L1_2022.csv")
+write_csv(l1_icp_pw_pooled_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_PW_POOL_ICP_2022_L1.csv")
 
-write_csv(l1_icp_source_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SOURCE_ICP_L1_2022.csv")
+write_csv(l1_icp_source_2022, "~/GitHub/TEMPEST-1-porewater/processed data/for_google_drive/TMP_SOURCE_ICP_2022_L1.csv")
 
 
 #For code review: 
-write_csv(l1_icp_pw_pooled_2022, "~/GitHub/TEMPEST_Porewater/processing_scripts/ICP/TEMPORARY/TMP_PW_POOL_ICP_L1_2022.csv")
+write_csv(l1_icp_pw_pooled_2022, "~/GitHub/TEMPEST_Porewater/processing_scripts/ICP/TEMPORARY/TMP_PW_POOL_ICP_2022_L1.csv")
 
-write_csv(l1_icp_source_2022, "~/GitHub/TEMPEST_Porewater/processing_scripts/ICP/TEMPORARY/TMP_SOURCE_ICP_L1_2022.csv")
+write_csv(l1_icp_source_2022, "~/GitHub/TEMPEST_Porewater/processing_scripts/ICP/TEMPORARY/TMP_SOURCE_ICP_2022_L1.csv")
 
 
 ```
