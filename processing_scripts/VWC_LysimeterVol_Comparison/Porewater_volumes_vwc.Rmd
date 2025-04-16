@@ -32,7 +32,7 @@ file_path = file.path(directory,"porewaterinventory.xlsx")
 
 drive_download(inventory_directory, path= file_path, overwrite = TRUE)
 
-pooled_vols <- readxl::read_excel(file_path, skip=4, sheet="Pooled") %>%
+pooled_vols <- readxl::read_excel(file_path, skip=4, sheet="Porewater - Pooled") %>%
   select(Sample_ID, Total_Volume_mL, Grid_C3:Grid_I5, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD) %>%
   mutate(across(starts_with("Grid"), ~ ifelse(is.na(.),0,.))) %>%
   mutate(Plot = stringr::str_extract(Sample_ID, 'FW|SW|C')) %>%
@@ -60,7 +60,7 @@ pooled_vols <- readxl::read_excel(file_path, skip=4, sheet="Pooled") %>%
   select(Sample_ID,plot, grid, Volume_mL, evacuation_date, collection_date) %>%
   filter(Volume_mL > 0)
 
-lysimeter_vols = readxl::read_excel(file_path, skip=3, sheet="Individual") %>%
+lysimeter_vols = readxl::read_excel(file_path, skip=3, sheet="Porewater - Individual") %>%
   select(Sample_ID, Plot, Volume_mL, Evacuation_date_YYYMMDD, Collection_Date_YYYYMMDD, Collection_Start_Time_24hrs, Collection_End_Time_24hrs, EST_EDT) %>%
     rename(evacuation_date = Evacuation_date_YYYMMDD,
          collection_date = Collection_Date_YYYYMMDD) %>%
@@ -81,7 +81,7 @@ lysimeter_vols = readxl::read_excel(file_path, skip=3, sheet="Individual") %>%
 
 
   
-vwc_l2 = readRDS("~/GitHub//TEMPEST-1-porewater/processed data/TMP_PW_L2_VWC_2022-2023.rds") %>%
+vwc_l2 = readRDS("~/GitHub/TEMPEST-1-porewater/processed data/TMP_PW_VWC_2022-2023_L2.rds") %>%
   filter(depth == "15") %>%
   mutate(date = as_date(datetime_est)) %>%
   group_by(plot, grid, date) %>%
@@ -97,7 +97,7 @@ vwc_lysvols_merged <- vwc_l2 %>%
 ```
 
 ```{r plot it}
-plot_order <- c('Control', 'Freshwater','Estuarine-water')
+plot_order <- c('Control', 'Freshwater','Saltwater')
 Anyas_colors_alpha_order = c("springgreen2", "violetred2", "cyan2")
 
 # Filter to evacuation dates, and by grid 
