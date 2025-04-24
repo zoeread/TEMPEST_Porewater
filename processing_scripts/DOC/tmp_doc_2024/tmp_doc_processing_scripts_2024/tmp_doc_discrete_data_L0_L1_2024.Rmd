@@ -5,3 +5,11 @@ date: "`r Sys.Date()`"
 output: html_document
 ---
 
+This file imports files from generates a yearly DOC/TN data file at L1. 
+Outputs from this script are:
+1) one L1 file per year per sample type (Lysimeter grids, pooled, source waters)
+2) weighted DOC values of pooled samples for SPE 
+
+File naming: SITE_SAMPLETYPE_ORG_ANALYSISTYPE_YEAR_LEVEL.csv 
+Include ORG only if applicable 
+
