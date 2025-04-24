@@ -1,0 +1,52 @@
+[Header]	
+System	TOCL TNML ASIL 9ML	
+S/W Version	1.00	
+User	sjw	
+Date/Time	9/18/2024 8:38:56 AM	
+
+[System]	
+Instrument Options	TOC/ASI/IC Unit/TN/	
+
+[Data]	
+Type	Anal.	Sample Name	Sample ID	Result(TOC)	Result(TC)	Result(IC)	Result(POC)	Result(NPOC)	Result(TN)	Unit	Vial	Date / Time	
+Unknown	NPOC/TN	DI	Untitled					0.4347	0.00845	mg/L	0	9/5/2024 11:48:26 AM	
+Unknown	NPOC/TN	DI	Untitled					0.3870	0.03582	mg/L	0	9/5/2024 12:10:12 PM	
+Unknown	NPOC/TN	DI	Untitled					0.3708	-0.01193	mg/L	0	9/5/2024 12:34:08 PM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.099	0.9738	mg/L	1	9/5/2024 1:05:01 PM	
+Unknown	NPOC/TN	DI	Untitled					0.4241	0.02667	mg/L	0	9/5/2024 1:25:52 PM	
+Standard	NPOC	CalCurve_NPOC	Untitled					100.0		mg/L	2, 3, 4, 5, 6, 7, 8, 9	9/5/2024 4:14:23 PM	
+Unknown	NPOC/TN	DI	Untitled					0.3257	0.04356	mg/L	0	9/5/2024 4:36:19 PM	
+Standard	TN	CalCurve_TN	Untitled						3.000	mg/L	10, 11, 12, 13, 14, 15, 16	9/5/2024 7:48:15 PM	
+Unknown	NPOC/TN	DI	Untitled					0.3275	0.05053	mg/L	0	9/5/2024 8:13:25 PM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.106	0.9364	mg/L	17	9/5/2024 8:43:37 PM	
+Unknown	NPOC/TN	DI	Untitled					0.2431	0.04824	mg/L	0	9/5/2024 9:06:56 PM	
+Unknown	NPOC/TN	TMP_20240812_SW_C6	Untitled					11.55	2.097	mg/L	18	9/5/2024 9:35:07 PM	
+Unknown	NPOC/TN	TMP_20240812_SW_C6_dup	Untitled					11.59	2.171	mg/L	19	9/5/2024 10:07:22 PM	
+Unknown	NPOC/TN	TMP_20240812_SW_E3	Untitled					4.861	0.3165	mg/L	20	9/5/2024 10:38:39 PM	
+Unknown	NPOC/TN	DI	Untitled					0.2773	0.07774	mg/L	0	9/5/2024 11:01:37 PM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.082	0.9115	mg/L	21	9/5/2024 11:31:52 PM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T2-1	Untitled					5.524	0.4982	mg/L	22	9/6/2024 12:01:04 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T2-2	Untitled					5.545	0.3900	mg/L	23	9/6/2024 12:30:33 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T2-3	Untitled					5.547	0.4774	mg/L	24	9/6/2024 12:55:54 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T5-1	Untitled					5.604	0.1863	mg/L	25	9/6/2024 1:26:22 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T5-2	Untitled					5.641	0.3894	mg/L	26	9/6/2024 1:44:23 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T5-3	Untitled					5.599	0.4109	mg/L	27	9/6/2024 2:14:01 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T24-1	Untitled					5.566	0.4233	mg/L	28	9/6/2024 2:43:43 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T24-2	Untitled					5.391	0.3621	mg/L	29	9/6/2024 3:12:36 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T24-3	Untitled					5.395	0.3210	mg/L	30	9/6/2024 3:41:28 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T47-1	Untitled					6.881	0.8760	mg/L	31	9/6/2024 4:11:37 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T47-2	Untitled					7.082	0.8927	mg/L	32	9/6/2024 4:40:39 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T47-3	Untitled					7.075	0.8584	mg/L	33	9/6/2024 5:10:46 AM	
+Unknown	NPOC/TN	LatT_SWH_INCUB_T47-3_dup	Untitled					7.103	0.8345	mg/L	34	9/6/2024 5:40:42 AM	
+Unknown	NPOC/TN	DI	Untitled					0.2752	0.07635	mg/L	0	9/6/2024 6:03:28 AM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.141	1.066	mg/L	35	9/6/2024 6:35:54 AM	
+Unknown	NPOC/TN	DI	Untitled					0.2322	0.1254	mg/L	0	9/6/2024 7:02:56 AM	
+Unknown	NPOC/TN	Test_K2SO4_blank	Untitled					1.644	0.1248	mg/L	36	9/6/2024 7:27:19 AM	
+Unknown	NPOC/TN	Test_K2SO4_0.5CN	Untitled					1.021	0.4154	mg/L	37	9/6/2024 7:57:12 AM	
+Unknown	NPOC/TN	Test_K2SO4_25C_1N	Untitled					37.33	1.389	mg/L	38	9/6/2024 8:28:40 AM	
+Unknown	NPOC/TN	DI	Untitled					0.2822	0.04072	mg/L	0	9/6/2024 8:57:12 AM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.177	1.006	mg/L	39	9/6/2024 9:25:40 AM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.197	0.9535	mg/L	40	9/6/2024 9:55:49 AM	
+Unknown	NPOC/TN	DI	Untitled					0.1675	0.03166	mg/L	0	9/6/2024 10:19:29 AM	
+Unknown	NPOC/TN	DI	Untitled					0.2173	0.1311	mg/L	0	9/6/2024 10:43:58 AM	
+Unknown	NPOC/TN	DI	Untitled					0.2629	0.06271	mg/L	0	9/6/2024 11:09:20 AM	
