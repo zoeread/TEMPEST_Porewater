@@ -1,7 +1,7 @@
 ---
 title: "COMPASS Synoptic Discrete Data Workflow: Example Worflow"
 author: "Stephanie J. Wilson & Stephanie Pennington"
-date: '2024-10-08'
+date: 'systemdate'
 output: html_document
 ---
 ##Setup
@@ -11,7 +11,7 @@ output: html_document
 cat("Setup")
 
 #a link to the Gitbook or whatever protocol you are using for this analysis 
-
+  #steph will add this soon 
 
 #Packages that are required 
   library(dplyr)
@@ -20,69 +20,179 @@ cat("Setup")
   library(stringr)
 
 #anything that needs to be changed do this in the first chunk
+  Date_Run = "7/20/22"
+  Run_by = "Technician"
+  raw_file_name(s) = "?"
+  processed_file_name = "?"
 
 #any coefficients / constants that are needed for calculations 
+  mw_c <- 12   #molecular weight of Carbon 
+  mw_n <- 14  #molecular weight of Nitrogen
 
-
-#expected ranges for sample concentrations used for flags 
-  # min_conc = int
-  # max_conc = int
-  # cv_flag = 10% 
-  # rep_flag = 10%
+#Flag that we 
+  chk_flag = 10   #this is a 10% error among checks 
+  rep_flag = 25 #this is a 25% error between samples
+  #blank_flag is calculated based on samples later in this code
 
 #check standard concentrations 
-  # chk_std = 10
+   chk_std_low_c = 1
+   chk_std_high_c = 50
+   chk_std_low_n = 1
+   chk_std_high_n = 2
   
-
 #any reference to other code 
+   ## if we need the metadata to check sample names we can put path here 
 
-common_tz = "Etc/GMT+5"
-
-Sys.setenv(TZ = "America/New_York")
+# Set time zone 
+  common_tz = "Etc/GMT+5"
+  Sys.setenv(TZ = "America/New_York")
 
 ```
 
 ## Import Data  
 ```{r Import Data, echo=FALSE}
 
-cat("Import Data")
+#find the file in the raw data folder 
 
-#set working directory
-  #could be from google drive or local drive etc. 
-path <- ("file path")
+#input AMPs function for reading in the data 
 
-#Read in Raw Data 
-raw <- read.csv("raw_datafile.csv")
-head(raw)
+
+
+#Only keep columns we need
+dat <- dat[ ,c(3,11:16)] 
+head(dat)
+
+#Rename columns
+colnames(dat) <- c( "Sample.Name", "Inj_No","Analysis","Area", "Mean Area", "Conc", "Inst_Results")
+head(dat)
+
+#Pull out computer calculated concentrations
+colmn <- paste("col", 1:2)
+dat <- dat %>% separate(Inst_Results, sep = " ", into = colmn, remove = FALSE)
+dat<- dat %>%
+  rename("NPOC_CONC" = "col 1",
+          "TN_CONC" = "col 2")
+dat$NPOC_CONC <- gsub('[NPOC:]','',dat$NPOC_CONC)
+dat$NPOC_CONC <- gsub('[mg/L]','',dat$NPOC_CONC)
+dat$NPOC_CONC <- as.numeric(dat$NPOC_CONC)
+dat$TN_CONC <- gsub('[TN:]','',dat$TN_CONC)
+dat$TN_CONC <- gsub('[mg/L]','',dat$TN_CONC)
+dat$TN_CONC <- as.numeric(dat$TN_CONC)
+
+
+#Separate TOC and TN files
+TOC_dat <- subset(dat, Analysis == "NPOC")
+TN_dat <- subset(dat, Analysis == "TN")
 
 ```
 
 ## Assessing standard Curves 
 ```{r Assess Standard Curves, echo=FALSE}
 
-cat("Assess Standard Curves")
-
+#filter standards out and AMP will add this 
 #Identify standards within raw file 
 
 
 #Plot standard Curve or Curves 
+#C Curve
+CO2_stds <- ggplot(stds_co2, aes(STD_Conc, CO2_Area)) + geom_point(size=4) + 
+  geom_smooth(method = "lm", se = FALSE, color="red") + labs(title="CO2 Std Curve")
+CO2_stds
+
+#N Curve
+CO2_stds <- ggplot(stds_co2, aes(STD_Conc, CO2_Area)) + geom_point(size=4) + 
+  geom_smooth(method = "lm", se = FALSE, color="red") + labs(title="CO2 Std Curve")
+CO2_stds
 
 
 #Pull out slope and R2 
 
 
+
 #Report out a flag if the run has an R2 lower than appropriate 
 
 
+
 #compare slopes to previous runs (from log) in order to assess drift 
-
-
 #write out slopes from current run to log 
+log <- read.csv("2024 Raw Data/COMPASS_TEMPEST_Varian_QAQC_2024.csv")
+head(log)
+log <- log[ ,-c(1)]
+log <- rbind(log, Slopes)
+
+Slopes_chk <- ggplot(log, aes(Run_Date, Slope, col=Curve)) + geom_point(size=4) + geom_line() + theme_bw()
+Slopes_chk
+
+write.csv(log, "2024 Raw Data/COMPASS_TEMPEST_Varian_QAQC_2024.csv")
+
+#RSV of standards 
+#Build a dataframe of RSVs for each concentration using all data available
+RSV.f <- function(x) {  
+    stdev <- sd(x)
+    ave <- mean(x)
+    return(stdev/ave)
+}
+RSV <- tapply(TOC_stds_filt$Area, TOC_stds_filt$Conc, RSV.f)
+RSV<-as.data.frame(RSV)
+stdev <- tapply(TOC_stds_filt$Area, TOC_stds_filt$Conc, sd)
+stdev <- as.data.frame(stdev)
+Ave <- tapply(TOC_stds_filt$Area, TOC_stds_filt$Conc, mean)
+Ave <- as.data.frame(Ave)
+STD_QAQC <- cbind(Ave,RSV, stdev)
+STD_QAQC <- tibble::rownames_to_column(STD_QAQC, "Conc")
+
+STD_QAQC$RSV.lab = NA
+STD_QAQC$RSV.lab <- ifelse(STD_QAQC$RSV > 0.1, "bad RSV", NA)
+
+#write out to user about whether or not to continue 
+ifelse(STD_QAQC$RSV.lab == "bad RSV", "CHECK RSVs", "ALL GOOD")
 
 ```
 
-## Check Standard Flagging
 ## Analyze the Check Standards 
+```{r Check Standards, echo=FALSE}
+
+#call to checkstds orrrr Pull out check standards from raw file 
+
+
+
+#calculate percent difference between check standards & expected concentration 
+#flag if the percent difference is over X% (defined in setup)
+#calculate percent difference of check standards 
+chks$Ch4_diff <- ((chks$CH4_Conc_ppm - level_ch4)/((chks$CH4_Conc_ppm + level_ch4)/2)) * 100
+chks$CH4_diff_flag <-  ifelse(chks$Ch4_diff <10, 'YES', 'NO, rerun')
+
+chks$CO2_diff <- ((chks$CO2_Conc_ppm - level_co2)/((chks$CO2_Conc_ppm + level_co2)/2)) * 100
+chks$CO2_diff_flag <-  ifelse(chks$CO2_diff <10, 'YES', 'NO, rerun')
+
+#now plot the Ch4 concentrations and the CO2 concentrations vs. the expected concentration 
+#then also make the color the percent difference between the expected and observed concentration
+ch4_chk <-  ggplot(data = chks, aes(x = Sample_ID, y = CH4_Conc_ppm, fill=CH4_diff_flag)) +
+       geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c("darkgreen", "darkgrey"))+
+        #scale_fill_gradient2(low='red', mid='white', high='blue', space='Lab') + 
+        theme_classic() + labs(x= " ", y="Percent Difference  (%)", title="Check Stds: CH4") + 
+        theme(legend.position="bottom") +  geom_hline(yintercept=level_ch4, linetype="dashed", 
+                color = "black", linewidth=1)
+
+
+co2_chk <-  ggplot(data = chks, aes(x = Sample_ID, y = CO2_Conc_ppm, fill=CO2_diff_flag)) +
+       geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c( "darkgrey", "darkgreen"))+
+        #scale_fill_gradient2(low='red', mid='white', high='blue', space='Lab') + 
+        theme_classic() + labs(x= " ", y="Percent Difference  (%)", title="Check Stds: CO2") + 
+        theme(legend.position="bottom") +  geom_hline(yintercept=level_co2, linetype="dashed", 
+                color = "black", linewidth=1)
+
+ggarrange(ch4_chk, co2_chk, nrow=1, ncol=2)
+
+
+#report out if flags indicate need for rerun
+
+
+```
+
+## Analyze the Blanks 
 ```{r Check Standards, echo=FALSE}
 
 cat("Analysis Check Standards")
@@ -107,6 +217,34 @@ cat("Analysis Check Standards")
 
 #report out if flags indicate need for rerun
 
+#calculate percent difference of check standards 
+chks$Ch4_diff <- ((chks$CH4_Conc_ppm - level_ch4)/((chks$CH4_Conc_ppm + level_ch4)/2)) * 100
+chks$CH4_diff_flag <-  ifelse(chks$Ch4_diff <10, 'YES', 'NO, rerun')
+
+chks$CO2_diff <- ((chks$CO2_Conc_ppm - level_co2)/((chks$CO2_Conc_ppm + level_co2)/2)) * 100
+chks$CO2_diff_flag <-  ifelse(chks$CO2_diff <10, 'YES', 'NO, rerun')
+
+#now plot the Ch4 concentrations and the CO2 concentrations vs. the expected concentration 
+#then also make the color the percent difference between the expected and observed concentration
+ch4_chk <-  ggplot(data = chks, aes(x = Sample_ID, y = CH4_Conc_ppm, fill=CH4_diff_flag)) +
+       geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c("darkgreen", "darkgrey"))+
+        #scale_fill_gradient2(low='red', mid='white', high='blue', space='Lab') + 
+        theme_classic() + labs(x= " ", y="Percent Difference  (%)", title="Check Stds: CH4") + 
+        theme(legend.position="bottom") +  geom_hline(yintercept=level_ch4, linetype="dashed", 
+                color = "black", linewidth=1)
+
+
+co2_chk <-  ggplot(data = chks, aes(x = Sample_ID, y = CO2_Conc_ppm, fill=CO2_diff_flag)) +
+       geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c( "darkgrey", "darkgreen"))+
+        #scale_fill_gradient2(low='red', mid='white', high='blue', space='Lab') + 
+        theme_classic() + labs(x= " ", y="Percent Difference  (%)", title="Check Stds: CO2") + 
+        theme(legend.position="bottom") +  geom_hline(yintercept=level_co2, linetype="dashed", 
+                color = "black", linewidth=1)
+
+ggarrange(ch4_chk, co2_chk, nrow=1, ncol=2)
+
 
 ```
 
@@ -116,17 +254,33 @@ cat("Analysis Check Standards")
 
 cat("Sample Flagging")
 
-#Flagging data if the concentration is outside the standards range 
+#Flagging data if the concentration is outside the standards range - AMP will add 
 
 
 #Flagging for CV of analytical duplicates or replicates 
+#quick first look at the samples 
+ch4_samples <-  ggplot(data = Samples, aes(x = Sample_ID, y = CH4_Conc_ppm, fill=CH4_Flag)) +
+       geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c("darkgreen","red"))+
+        #scale_fill_gradient2(low='red', mid='white', high='blue', space='Lab') + 
+        theme_classic() + labs(x= " ", y="CH4 (ppm)", title="CH4: Green = Within Range") + 
+        theme(legend.position="none") 
 
+
+co2_samples <-  ggplot(data = Samples, aes(x = Sample_ID, y = CO2_Conc_ppm, fill=CO2_Flag)) +
+       geom_bar(stat = 'identity') + 
+        scale_fill_manual(values=c("red", "darkgreen"))+
+        #scale_fill_gradient2(low='red', mid='white', high='blue', space='Lab') + 
+        theme_classic() + labs(x= " ", y="CO2 (ppm)", title="CO2: Green = Within Range") + 
+        theme(legend.position="none") 
+
+ggarrange(ch4_samples, co2_samples, nrow=1, ncol=2)
 
 
 ```
 
 
-## Visualize Data 
+## Visualize Data - not sure if we need this maybe we should do it by plot 
 ```{r Visualize Data}
 
 cat("Visualize Data")
@@ -136,13 +290,15 @@ cat("Visualize Data")
 
 ```
 
-## Add in/check metadata 
+## Add in/check metadata AMP!!!!! 
 Do sample IDs match? Add flags 
 
 ## Export Processed Data  
 ```{r, Export Processed Data}
 
 cat("Export Processed Data")
+
+#will put final data in processed data folder 
 
 #set working directory 
 finalpath <- "file path"
@@ -153,7 +309,7 @@ finalpath <- "file path"
   #example read in sample IDs list and merge 
   #create required ID columns in R, etc. 
 
-#Write out data frame 
+#Write out data frame - call from first chunk ## CHANGE 
 write.csv(alldat, "file_name")
 
 ```
