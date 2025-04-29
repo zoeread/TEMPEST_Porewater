@@ -19,6 +19,8 @@ cat("Setup")
   library(ggpubr)
   library(stringr)
 
+#anything that needs to be changed do this in the first chunk
+
 #any coefficients / constants that are needed for calculations 
 
 
@@ -34,7 +36,9 @@ cat("Setup")
 
 #any reference to other code 
 
+common_tz = "Etc/GMT+5"
 
+Sys.setenv(TZ = "America/New_York")
 
 ```
 
@@ -77,33 +81,7 @@ cat("Assess Standard Curves")
 
 ```
 
-## Sample Processing - Calculating Concentrations  
-```{r Sample Processing, echo=FALSE}
-
-cat("Sample Processing")
-
-#Remove standards or other checks not needed here if necessary 
-
-
-#Calculate concentrations from standard curve 
-
-
-```
-
-## Sample Flagging - Within standards range?  
-```{r Sample Processing, echo=FALSE}
-
-cat("Sample Flagging")
-
-#Flagging data if the concentration is outside the standards range 
-
-
-#Flagging for CV of analytical duplicates or replicates 
-
-
-
-```
-
+## Check Standard Flagging
 ## Analyze the Check Standards 
 ```{r Check Standards, echo=FALSE}
 
@@ -132,16 +110,21 @@ cat("Analysis Check Standards")
 
 ```
 
-## Dilution Corrections 
-```{r Dilution Corrections}
 
-cat("Dilution Corrections")
+## Sample Flagging - Within standards range?  
+```{r Sample Processing, echo=FALSE}
 
-#Calculate the concentration when accounting for the dilution factor if applicable
+cat("Sample Flagging")
+
+#Flagging data if the concentration is outside the standards range 
+
+
+#Flagging for CV of analytical duplicates or replicates 
 
 
 
 ```
+
 
 ## Visualize Data 
 ```{r Visualize Data}
@@ -152,6 +135,9 @@ cat("Visualize Data")
 
 
 ```
+
+## Add in/check metadata 
+Do sample IDs match? Add flags 
 
 ## Export Processed Data  
 ```{r, Export Processed Data}
