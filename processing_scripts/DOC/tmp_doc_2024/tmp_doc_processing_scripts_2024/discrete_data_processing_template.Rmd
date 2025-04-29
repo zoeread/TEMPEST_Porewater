@@ -1,7 +1,7 @@
 ---
 title: "COMPASS Synoptic Discrete Data Workflow: Example Worflow"
-author: "Stephanie J. Wilson & Stephanie Pennington"
-date: 'systemdate'
+author: Script_run_by
+date: "`r Sys.Date()`"
 output: html_document
 ---
 ##Setup
@@ -18,11 +18,18 @@ cat("Setup")
   library(ggplot2)
   library(ggpubr)
   library(stringr)
+  library(purrr)
+  library(tidyverse)
+  
 
 #anything that needs to be changed do this in the first chunk
   Date_Run = "7/20/22"
   Run_by = "Technician"
-  raw_file_name(s) = "?"
+  Script_run_by = "Name"
+  #file path and name for summary file 
+  raw_file_name = "~/GitHub/TEMPEST_Porewater/processing_scripts/DOC/tmp_doc_2024/tmp_doc_raw_data_2024/TMP_202408.txt" 
+  #file path and name for the all peaks file 
+  raw_allpeaks_name = "~/GitHub/TEMPEST_Porewater/processing_scripts/DOC/tmp_doc_2024/tmp_doc_raw_data_2024/TMP_202408_allpeaks.txt"
   processed_file_name = "?"
 
 #any coefficients / constants that are needed for calculations 
@@ -50,39 +57,47 @@ cat("Setup")
 ```
 
 ## Import Data  
+```{r create function to read in data}
+## Create a function to read in data from summary file: 
+
+read_data <- function(data){
+  # Second, read in data
+  read_delim(file = data, skip = 10, delim = "\t", show_col_types = FALSE) %>% 
+    rename(sample_name = `Sample Name`, 
+           npoc_raw = `Result(NPOC)`, 
+           tdn_raw = `Result(TN)`,
+           run_datetime = `Date / Time`) %>% 
+    select(sample_name, npoc_raw, tdn_raw,run_datetime)
+}
+
+read_curve <- function(data){
+  # Second, read in data
+  read_delim(file = data, skip = 10, delim = "\t", show_col_types = FALSE) %>% 
+    rename(sample_name = `Sample Name`,
+           analyte = `Analysis(Inj.)`,
+           concentration = `Conc.`,
+           area = Area,
+           manual_dilution = `Manual Dilution`,
+           excluded = Excluded,
+           run_datetime = `Date / Time`) %>% 
+    filter(excluded == 0) %>% #filter to injections that are included in the analysis 
+    select(sample_name, analyte, concentration, area, run_datetime) %>%
+    pivot_wider(names_from= analyte, values_from = concentration) %>%
+    rename(npoc_raw = NPOC,
+           tdn_raw = TN)
+}
+```
+
+    
 ```{r Import Data, echo=FALSE}
 
 #find the file in the raw data folder 
 
-#input AMPs function for reading in the data 
+dat_raw <- raw_file_name %>% 
+  map_df(read_data) %>% 
+  filter(grepl("TMP", sample_name)) %>% # filter to TMP samples only
+  bind_rows() 
 
-
-
-#Only keep columns we need
-dat <- dat[ ,c(3,11:16)] 
-head(dat)
-
-#Rename columns
-colnames(dat) <- c( "Sample.Name", "Inj_No","Analysis","Area", "Mean Area", "Conc", "Inst_Results")
-head(dat)
-
-#Pull out computer calculated concentrations
-colmn <- paste("col", 1:2)
-dat <- dat %>% separate(Inst_Results, sep = " ", into = colmn, remove = FALSE)
-dat<- dat %>%
-  rename("NPOC_CONC" = "col 1",
-          "TN_CONC" = "col 2")
-dat$NPOC_CONC <- gsub('[NPOC:]','',dat$NPOC_CONC)
-dat$NPOC_CONC <- gsub('[mg/L]','',dat$NPOC_CONC)
-dat$NPOC_CONC <- as.numeric(dat$NPOC_CONC)
-dat$TN_CONC <- gsub('[TN:]','',dat$TN_CONC)
-dat$TN_CONC <- gsub('[mg/L]','',dat$TN_CONC)
-dat$TN_CONC <- as.numeric(dat$TN_CONC)
-
-
-#Separate TOC and TN files
-TOC_dat <- subset(dat, Analysis == "NPOC")
-TN_dat <- subset(dat, Analysis == "TN")
 
 ```
 
@@ -90,7 +105,22 @@ TN_dat <- subset(dat, Analysis == "TN")
 ```{r Assess Standard Curves, echo=FALSE}
 
 #filter standards out and AMP will add this 
-#Identify standards within raw file 
+
+stds_all <- raw_allpeaks_name %>% 
+  map_df(read_curve) %>% 
+  filter(grepl("CalCurve", sample_name)) %>% 
+  rename(standard_C_ppm = npoc_raw,
+         standard_N_ppm = tdn_raw) %>%
+  select(run_datetime,standard_C_ppm,standard_N_ppm, area) %>%
+  bind_rows() 
+
+stds_C <- stds_all %>%
+  filter(!is.na(standard_C_ppm)) %>%
+  select(-standard_N_ppm)
+
+stds_N <- stds_all %>%
+  filter(!is.na(standard_N_ppm)) %>%
+  select(-standard_C_ppm)
 
 
 #Plot standard Curve or Curves 
@@ -125,6 +155,18 @@ Slopes_chk
 
 write.csv(log, "2024 Raw Data/COMPASS_TEMPEST_Varian_QAQC_2024.csv")
 
+#write out to user about whether or not to continue 
+#is your slope within range or not? Update this 
+ifelse(STD_QAQC$RSV.lab == "bad RSV", "CHECK RSVs", "ALL GOOD")
+
+```
+
+## Analyze the Check Standards 
+```{r Check Standards, echo=FALSE}
+
+#call to checkstds orrrr Pull out check standards from raw file 
+
+
 #RSV of standards 
 #Build a dataframe of RSVs for each concentration using all data available
 RSV.f <- function(x) {  
@@ -146,15 +188,6 @@ STD_QAQC$RSV.lab <- ifelse(STD_QAQC$RSV > 0.1, "bad RSV", NA)
 
 #write out to user about whether or not to continue 
 ifelse(STD_QAQC$RSV.lab == "bad RSV", "CHECK RSVs", "ALL GOOD")
-
-```
-
-## Analyze the Check Standards 
-```{r Check Standards, echo=FALSE}
-
-#call to checkstds orrrr Pull out check standards from raw file 
-
-
 
 #calculate percent difference between check standards & expected concentration 
 #flag if the percent difference is over X% (defined in setup)
