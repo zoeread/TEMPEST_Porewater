@@ -20,6 +20,8 @@ cat("Setup")
   library(stringr)
   library(purrr)
   library(tidyverse)
+  library(here)
+  library(googledrive)
   
 #anything that needs to be changed do this in the first chunk
   Date_Run = "7/20/22"
@@ -44,13 +46,13 @@ cat("Setup")
   rep_flag = 25 #this is a 25% error between samples
   #blank_flag is calculated based on samples later in this code
 
-#check standard concentrations 
+#check standard concentrations - Update if running different checks: 
    chk_std_low_c = 1
    chk_std_high_c = 50
    chk_std_low_n = 1
    chk_std_high_n = 2
    
-#Top standard Concentrations
+#Top standard Concentrations- Update if running different standard curve: 
    top_std_c = 100
    top_std_n = 3
   
@@ -65,6 +67,18 @@ cat("Setup")
 plot_order <- c('Control', 'Freshwater', 'Saltwater')
 anyas_colors <- c('springgreen2', 'cyan2', 'violetred2')
 
+```
+
+## pull in active porewater tracking inventory sheet: 
+```{r pull in metadata for later}
+
+inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
+
+directory= file.path(here() %>% dirname(), 'tmp_doc_2024/tmp_doc_metadata_2024')
+
+file_path = file.path(directory, paste0("porewaterinventory_", Sys.Date(), ".xlsx"))
+
+drive_download(inventory_directory, path= file_path, overwrite = FALSE)
 ```
 
 ## Import Data Functions  
@@ -110,7 +124,7 @@ dat_raw <- raw_file_name %>%
   filter(grepl("TMP", sample_name)) %>% # filter to TMP samples only
   bind_rows() 
 
-
+head(dat_raw)
 ```
 
 ## Assessing standard Curves 
@@ -122,7 +136,7 @@ cat("Assess the Standard Curve")
 stds_all <- raw_allpeaks_name %>% 
   map_df(read_curve) %>% 
   filter(grepl("CalCurve", sample_name)) %>% 
-  rename(standard_C_ppm = npoc_raw,
+  dplyr::rename(standard_C_ppm = npoc_raw,
          standard_N_ppm = tdn_raw) %>%
   select(run_datetime,standard_C_ppm,standard_N_ppm, area) %>%
   bind_rows() 
@@ -316,7 +330,7 @@ ifelse(n_blks_percent >= 60, ">60% of Nitrogen Blank concentrations are lower 25
        "<60% of Nitrogen blaks are lower 25% quartile of samples - REASSESS")
 
 
-#now plot the Ch4 concentrations and the CO2 concentrations vs. the expected concentration 
+#now plot the DOC concentrations and the TDN concentrations vs. the expected concentration 
 #then also make the color the percent difference between the expected and observed concentration
 c_blks <-  ggplot(data = blks_raw, aes(x = rep, y = npoc_raw, fill=C_diff_flag)) +
        geom_bar(stat = 'identity') + 
@@ -339,8 +353,14 @@ ggarrange(c_blks, n_blks, nrow=1, ncol=2)
 
 #find average of run carbon and nitrogen blanks for flagging samples later 
 blk_avg_c <- mean(blks_raw$npoc_raw)
+
+cat("carbon blanks:")
+print(blk_avg_c)
+
 blk_avg_n <- mean(blks_raw$tdn_raw)
 
+cat("nitrogen blanks:")
+print(blk_avg_n)
 
 ```
 
@@ -435,14 +455,11 @@ cat("Sample Flagging")
 dat_flagged <- dat_raw %>% 
   mutate(npoc_flag = case_when(npoc_raw > top_std_c ~ "value above cal curve",
             blk_avg_c > 0.25*npoc_raw ~ "blank is ≥ 25% of sample value"), # flagging if blank concentration is > 20% of the sample concentration
-            #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), #if needed 
+            #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), # if needed and there are issues with sample names
     
         tdn_flag = case_when(tdn_raw > top_std_n ~ "value above cal curve",
             blk_avg_n > 0.25*tdn_raw ~ "blank is ≥ 25% of sample value") #, # flagging if blank concentration is > 25% of the sample concentration 
-           #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), #if needed 
-  
-       # npoc_raw = case_when(npoc_flag == "incorrect sample naming, cannot resolve" ~ NA, TRUE ~ npoc_raw),
-        #tdn_raw = case_when(tdn_flag == "incorrect sample naming, cannot resolve" ~ NA, TRUE ~ tdn_raw)
+           #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), # if needed and there are issues with sample names
  )
 
 print(dat_flagged)
@@ -513,8 +530,32 @@ ggarrange(viz_c_plot, viz_n_plot, nrow=1, ncol=2)
 
 ```
 
-## Add in/check metadata AMP!!!!! 
+## Add in/check metadata 
 Do sample IDs match? Add flags 
+
+```{r, check sample ids with metadata}
+
+cat("Check Sample IDs with Metadata")
+
+sample_collected_metadata <- readxl::read_excel(file_path, skip=3, sheet="Porewater - Individual") %>%
+  select(Vial_ID) %>%
+  mutate(sample_type = stringr::str_extract(Vial_ID, 'SO4|FE|DOC|NUTR|AMINO|ISO|SAC|HR-MS|CDOM')) %>% #get the sample type from the Vial_ID
+  filter(sample_type == "DOC") #filter to just DOC samples
+
+samples_collected <- sample_collected_metadata %>%
+  #note sample names are not entered in the sheets the same way: DOC data entered time_plot_grid; metadata entered plot_grid_date
+  mutate(plot = stringr::str_extract(Vial_ID, 'SW|FW|C'),
+         grid = stringr::str_extract(Vial_ID, "B4|C3|C6|D5|E3|F4|F6|H3|H6|I5") ,
+         date = stringr::str_extract(Vial_ID, "[0-9]{8}"),
+         sample_name = paste0("TMP_", date, "_", plot, "_", grid)) 
+
+# Were samples ran in this run?
+dat_flagged %>%
+  mutate(metadata_recorded = case_when(sample_name %in% samples_collected$sample_name ~ TRUE,
+                                       .default = FALSE))
+
+```
+** need to decide how we are handling replicates **
 
 ## Export Processed Data  
 ```{r, Export Processed Data}
