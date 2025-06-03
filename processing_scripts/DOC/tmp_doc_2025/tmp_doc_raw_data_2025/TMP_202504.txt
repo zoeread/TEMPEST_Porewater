@@ -1,0 +1,43 @@
+[Header]	
+System	TOCL TNML ASIL 9ML	
+S/W Version	1.00	
+User	sjw	
+Date/Time	4/8/2025 9:08:25 PM	
+
+[System]	
+Instrument Options	TOC/ASI/IC Unit/TN/	
+
+[Data]	
+Type	Anal.	Sample Name	Sample ID	Result(TOC)	Result(TC)	Result(IC)	Result(POC)	Result(NPOC)	Result(TN)	Unit	Vial	Date / Time	
+Unknown	NPOC/TN	DI	Untitled					4.994	0.1259	mg/L	0	4/7/2025 2:45:24 PM	
+Unknown	NPOC/TN	DI	Untitled					4.931	0.1302	mg/L	0	4/7/2025 3:09:49 PM	
+Unknown	NPOC/TN	DI	Untitled					4.828	0.1331	mg/L	0	4/7/2025 3:35:37 PM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					7.902	1.288	mg/L	1	4/7/2025 4:04:19 PM	
+Unknown	NPOC/TN	DI	Untitled					4.962	0.1505	mg/L	0	4/7/2025 4:24:47 PM	
+Standard	NPOC	CalCurve_NPOC	Untitled					100.0		mg/L	2, 3, 4, 5, 6, 7, 8, 9	4/7/2025 7:40:56 PM	
+Unknown	NPOC/TN	DI	Untitled					5.010	0.1661	mg/L	0	4/7/2025 8:05:56 PM	
+Standard	TN	CalCurve_TN	Untitled						3.000	mg/L	10, 11, 12, 13, 14, 15, 16	4/7/2025 10:38:36 PM	
+Unknown	NPOC/TN	DI	Untitled					-0.01928	0.04298	mg/L	0	4/7/2025 11:01:44 PM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.949	1.147	mg/L	17	4/7/2025 11:31:26 PM	
+Unknown	NPOC/TN	DI	Untitled					-0.03922	0.04712	mg/L	0	4/7/2025 11:53:07 PM	
+Unknown	NPOC/TN	TMP_SW_B4_20250403	Untitled					85.00	2.174	mg/L	18	4/8/2025 12:21:11 AM	
+Unknown	NPOC/TN	TMP_SW_C3_20250403	Untitled					67.30	1.819	mg/L	19	4/8/2025 12:48:14 AM	
+Unknown	NPOC/TN	TMP_SW_C3_20250403_dup	Untitled					66.24	1.789	mg/L	20	4/8/2025 1:20:48 AM	
+Unknown	NPOC/TN	TMP_SW_C6_20250403	Untitled					60.40	2.035	mg/L	21	4/8/2025 1:52:33 AM	
+Unknown	NPOC/TN	TMP_SW_D5_20250403	Untitled					39.07	1.312	mg/L	22	4/8/2025 2:22:45 AM	
+Unknown	NPOC/TN	TMP_SW_E3_20250403	Untitled					46.02	1.565	mg/L	23	4/8/2025 2:54:49 AM	
+Unknown	NPOC/TN	TMP_FW_B4_20250403	Untitled					13.08	0.8065	mg/L	24	4/8/2025 3:24:05 AM	
+Unknown	NPOC/TN	TMP_FW_C3_20250406	Untitled					15.19	0.4337	mg/L	25	4/8/2025 3:54:37 AM	
+Unknown	NPOC/TN	TMP_FW_C6_20250403	Untitled					9.244	0.2882	mg/L	26	4/8/2025 4:24:17 AM	
+Unknown	NPOC/TN	TMP_FW_D5_20250403	Untitled					19.89	0.6236	mg/L	27	4/8/2025 4:54:34 AM	
+Unknown	NPOC/TN	TMP_FW_F4_20250403	Untitled					20.02	0.5415	mg/L	28	4/8/2025 5:25:48 AM	
+Unknown	NPOC/TN	TMP_FW_F4_20250403_dup	Untitled					20.36	0.5415	mg/L	29	4/8/2025 5:55:39 AM	
+Unknown	NPOC/TN	TMP_CTRL_F4_20250403	Untitled					18.61	0.4969	mg/L	30	4/8/2025 6:25:23 AM	
+Unknown	NPOC/TN	TMP_CTRL_H6_20250403	Untitled					24.86	0.6914	mg/L	31	4/8/2025 6:45:40 AM	
+Unknown	NPOC/TN	TMP_CTRL_I5_20250403	Untitled					19.15	0.4633	mg/L	32	4/8/2025 7:14:51 AM	
+Unknown	NPOC/TN	DI	Untitled					-0.00197	0.09625	mg/L	0	4/8/2025 7:39:45 AM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.809	1.087	mg/L	33	4/8/2025 8:02:25 AM	
+Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.743	1.020	mg/L	34	4/8/2025 8:29:40 AM	
+Unknown	NPOC/TN	DI	Untitled					-0.07692	0.02673	mg/L	0	4/8/2025 8:52:36 AM	
+Unknown	NPOC/TN	DI	Untitled					-0.1002	0.05333	mg/L	0	4/8/2025 9:15:11 AM	
+Unknown	NPOC/TN	DI	Untitled					-0.06011	0.06812	mg/L	0	4/8/2025 9:37:07 AM	
