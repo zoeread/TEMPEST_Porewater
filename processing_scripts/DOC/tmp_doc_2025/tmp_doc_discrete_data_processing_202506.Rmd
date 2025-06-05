@@ -4,7 +4,7 @@ author: "June 2025"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
-##Run Information
+## Run Information
 ```{r}
 
 #identify which section you are in 
@@ -17,8 +17,9 @@ cat("Run Information")
   Date_Run = "06/03/25"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
-  run_notes = "One CTRL (H6) sample has high TN, no issue with peaks or sample before/after.
-  NPOC in that sample fine."
+  run_notes = "One CTRL (H6) sample has high TN, 
+  no issue with peaks or samples before/after and the NPOC in that sample is fine.
+  One check at the end of the run came out odd - was prepped by TL, not SJW - can ignore."
   
   #file path and name for summary file 
     raw_file_name = "tmp_doc_raw_data_2025/TMP_202506.txt" 
@@ -36,7 +37,7 @@ cat("Run Information")
 
 ```
 
-##Setup
+## Setup
 ```{r setup, include=FALSE}
 
 #identify which section you are in 
@@ -405,10 +406,10 @@ c_chks_percent <- (sum(chks_raw$C_diff_flag == "YES")/nrow(chks_raw))*100
 n_chks_percent <- (sum(chks_raw$N_diff_flag == "YES")/nrow(chks_raw))*100
 
 #report out if flags indicate need for rerun
-ifelse(c_chks_percent >= 60, ">60% of Carbon Check Standards are within range of expected concentration",
-       "<60% of Carbon Check Standards are within range of expected concentration - REASSESS")
-ifelse(n_chks_percent >= 60,">60% of Nitrogen Check Standards are within range of expected concentration",
-       "<60% of Nitrogen Check Standards are within range of expected concentration - REASSESS")
+ifelse(c_chks_percent >= chks_flag, ">60% of Carbon Check Standards are within range of the expected concentration",
+       "<60% of Carbon Check Standards are within range of the expected concentration - REASSESS")
+ifelse(n_chks_percent >= chks_flag,">60% of Nitrogen Check Standards are within range of the expected concentration",
+       "<60% of Nitrogen Check Standards are within range of the expected concentration - REASSESS")
 
 #write out a flag to the sample dataframe if less than 60% of the checks are within the expected CV
 if (c_chks_percent <= chks_flag) {
@@ -459,10 +460,10 @@ c_blks_percent <- (sum(blks_raw$C_diff_flag == "YES")/nrow(blks_raw))*100
 n_blks_percent <- (sum(blks_raw$N_diff_flag == "YES")/nrow(blks_raw))*100
 
 #report out if flags indicate need for rerun
-ifelse(c_blks_percent >= chks_flag, ">60% of Carbon Blank concentrations are lower 25% quartile of samples",
-       "<60% of Carbon blaks are lower 25% quartile of samples - REASSESS")
-ifelse(n_blks_percent >= chks_flag, ">60% of Nitrogen Blank concentrations are lower 25% quartile of samples",
-       "<60% of Nitrogen blaks are lower 25% quartile of samples - REASSESS")
+ifelse(c_blks_percent >= chks_flag, ">60% of Carbon Blank concentrations are below the lower 25% quartile of samples",
+       "<60% of Carbon blanks are higher than the lower 25% quartile of samples - REASSESS")
+ifelse(n_blks_percent >= chks_flag, ">60% of Nitrogen Blank concentrations are below the lower 25% quartile of samples",
+       "<60% of Nitrogen blanks are higher than the lower 25% quartile of samples - REASSESS")
 
 
 #now plot the DOC concentrations and the TDN concentrations vs. the expected concentration 
