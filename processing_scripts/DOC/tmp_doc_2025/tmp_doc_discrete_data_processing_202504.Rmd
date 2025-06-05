@@ -1,5 +1,5 @@
 ---
-title: "COMPASS Synoptic Discrete Data Workflow: 202504"
+title: "COMPASS TEMPEST Discrete DOC Data Workflow: 202504"
 author: Script_run_by
 date: "`r Sys.Date()`"
 output: html_document
@@ -25,6 +25,10 @@ cat("Run Information")
   #raw_allpeaks_name = "~/GitHub/TEMPEST_Porewater/processing_scripts/DOC/tmp_doc_2024/tmp_doc_raw_data_2024/TMP_202408_allpeaks.txt"
     raw_allpeaks_name = "tmp_doc_raw_data_2025/TMP_202504_allpeaks.txt"
     processed_file_name = "tmp_doc_processed_data_2025/TMP_PW_DOC_Processed_202504.csv"
+    
+#check standard concentrations - Update if running different checks: 
+   chk_std_c = 1
+   chk_std_n = 1
 
 #Log path 
     Log_path = "tmp_doc_raw_data_2025/COMPASS_TMP_TOCTN_QAQClog_2025.csv"
@@ -64,12 +68,6 @@ cat("Setup")
   chk_conc_flag = 15 #this is the level cutoff for percent difference of check standards vs. the concentration they are meant to be 
   rep_flag = 25 #this is a 25% error between samples
   #blank_flag is calculated based on samples later in this code
-
-#check standard concentrations - Update if running different checks: 
-   chk_std_low_c = 1
-   chk_std_high_c = 50
-   chk_std_low_n = 1
-   chk_std_high_n = 2
    
 #Top standard Concentrations- Update if running different standard curve: 
    top_std_c = 100
@@ -368,11 +366,11 @@ ifelse(chks_N_rsv >= chk_flag, "Nitrogen CHECK STANDARD RSD TOO HIGH - REASSESS"
 #calculate percent difference between check standards & expected concentration 
 #flag if the percent difference is over X% (defined in setup)
 #calculate percent difference of check standards 
-chks_raw$C_diff <- ((chks_raw$npoc_raw - chk_std_low_c)/((chks_raw$npoc_raw + chk_std_low_c)/2)) * 100
-chks_raw$C_diff_flag <-  ifelse(chks_raw$C_diff <= chk_conc_flag, 'YES', 'NO, rerun')
+chks_raw$C_diff <- ((chks_raw$npoc_raw - chk_std_c)/((chks_raw$npoc_raw + chk_std_c)/2)) * 100
+chks_raw$C_diff_flag <-  ifelse(abs(chks_raw$C_diff) <= chk_conc_flag, 'YES', 'NO, rerun')
 
-chks_raw$N_diff <- ((chks_raw$tdn_raw - chk_std_low_n)/((chks_raw$tdn_raw + chk_std_low_n)/2)) * 100
-chks_raw$N_diff_flag <-  ifelse(chks_raw$N_diff <= chk_conc_flag, 'YES', 'NO, rerun')
+chks_raw$N_diff <- ((chks_raw$tdn_raw - chk_std_n)/((chks_raw$tdn_raw + chk_std_n)/2)) * 100
+chks_raw$N_diff_flag <-  ifelse(abs(chks_raw$N_diff) <= chk_conc_flag, 'YES', 'NO, rerun')
 
 #now plot the Ch4 concentrations and the CO2 concentrations vs. the expected concentration 
 #then also make the color the percent difference between the expected and observed concentration
@@ -380,7 +378,7 @@ c_chks <-  ggplot(data = chks_raw, aes(x = rep, y = npoc_raw, fill=C_diff_flag))
        geom_bar(stat = 'identity') + 
         scale_fill_manual(values = c("YES" = "darkgreen", "NO, rerun" = "darkgrey")) +
         theme_classic() + labs(x= " ", y="NPOC (mg/L)", title="Check Stds: NPOC") + 
-        theme(legend.position="bottom") +  geom_hline(yintercept=chk_std_low_c,
+        theme(legend.position="bottom") +  geom_hline(yintercept=chk_std_c,
               linetype="dashed", color = "black", linewidth=1) + 
               guides(fill=guide_legend(title="% Difference <10%"))
 
@@ -389,7 +387,7 @@ n_chks <-  ggplot(data = chks_raw, aes(x = rep, y = tdn_raw, fill=N_diff_flag)) 
        geom_bar(stat = 'identity') + 
        scale_fill_manual(values = c("YES" = "darkgreen", "NO, rerun" = "darkgrey")) +
         theme_classic() + labs(x= " ", y="TN  (mg/L)", title="Check Stds: TN") + 
-        theme(legend.position="bottom") +  geom_hline(yintercept=chk_std_low_n,
+        theme(legend.position="bottom") +  geom_hline(yintercept=chk_std_n,
               linetype="dashed",  color = "black", linewidth=1) + 
               guides(fill=guide_legend(title="% Difference <10%"))
 
