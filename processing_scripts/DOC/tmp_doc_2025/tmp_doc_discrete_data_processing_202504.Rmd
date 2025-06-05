@@ -1,10 +1,10 @@
 ---
 title: "COMPASS TEMPEST Discrete DOC Data Workflow: 202504"
-author: Script_run_by
+author: "April 2025"
 date: "`r Sys.Date()`"
-output: html_document
+output: pdf_document
 ---
-##Run Information
+## Run Information
 ```{r}
 
 #identify which section you are in 
@@ -17,13 +17,13 @@ cat("Run Information")
   Date_Run = "04/07/25"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
-  run_notes = "NPOC Check Standard was a bit old and came out higher than expected"
+  run_notes = "NPOC Check Standard was a bit old and came out higher than expected."
+ 
   #file path and name for summary file 
- # raw_file_name = "~/GitHub/TEMPEST_Porewater/processing_scripts/DOC/tmp_doc_2024/tmp_doc_raw_data_2024/TMP_202408.txt" 
     raw_file_name = "tmp_doc_raw_data_2025/TMP_202504.txt" 
   #file path and name for the all peaks file 
-  #raw_allpeaks_name = "~/GitHub/TEMPEST_Porewater/processing_scripts/DOC/tmp_doc_2024/tmp_doc_raw_data_2024/TMP_202408_allpeaks.txt"
     raw_allpeaks_name = "tmp_doc_raw_data_2025/TMP_202504_allpeaks.txt"
+  #file path and name for processed data after QAQC
     processed_file_name = "tmp_doc_processed_data_2025/TMP_PW_DOC_Processed_202504.csv"
     
 #check standard concentrations - Update if running different checks: 
@@ -35,7 +35,7 @@ cat("Run Information")
 
 ```
 
-##Setup
+## Setup
 ```{r setup, include=FALSE}
 
 #identify which section you are in 
@@ -86,7 +86,7 @@ anyas_colors <- c('springgreen2', 'cyan2', 'violetred2')
 
 ```
 
-## pull in active porewater tracking inventory sheet: 
+## Pull in active porewater tracking inventory sheet 
 ```{r pull in metadata for later, echo=FALSE}
 
 #inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
@@ -111,6 +111,8 @@ if (!file.exists(file_path)) {
 
 #drive_download(inventory_directory, path= file_path, overwrite = FALSE)
 ```
+
+\newpage
 
 ## Import Data Functions  
 ```{r create function to read in data, echo=FALSE}
@@ -157,6 +159,8 @@ dat_raw <- raw_file_name %>%
 
 head(dat_raw)
 ```
+
+\newpage
 
 ## Assessing standard Curves 
 ```{r Assess Standard Curves, echo=FALSE}
@@ -340,6 +344,8 @@ dat_raw <- dat_raw %>%
 
 ```
 
+\newpage
+
 ## Assess Check Standards 
 ```{r Check Standards, echo=FALSE}
 
@@ -398,10 +404,10 @@ c_chks_percent <- (sum(chks_raw$C_diff_flag == "YES")/nrow(chks_raw))*100
 n_chks_percent <- (sum(chks_raw$N_diff_flag == "YES")/nrow(chks_raw))*100
 
 #report out if flags indicate need for rerun
-ifelse(c_chks_percent >= 60, ">60% of Carbon Check Standards are within range of expected concentration",
-       "<60% of Carbon Check Standards are within range of expected concentration - REASSESS")
-ifelse(n_chks_percent >= 60,">60% of Nitrogen Check Standards are within range of expected concentration",
-       "<60% of Nitrogen Check Standards are within range of expected concentration - REASSESS")
+ifelse(c_chks_percent >= chks_flag, ">60% of Carbon Check Standards are within range of the expected concentration",
+       "<60% of Carbon Check Standards are within range of the expected concentration - REASSESS")
+ifelse(n_chks_percent >= chks_flag,">60% of Nitrogen Check Standards are within range of the expected concentration",
+       "<60% of Nitrogen Check Standards are within range of the expected concentration - REASSESS")
 
 #write out a flag to the sample dataframe if less than 60% of the checks are within the expected CV
 if (c_chks_percent <= chks_flag) {
@@ -421,6 +427,8 @@ if (n_chks_percent <= chks_flag) {  # assuming you have tn_chks_percent similarl
 }
 
 ```
+
+\newpage
 
 ## Assess Blanks 
 ```{r Check Blanks, echo=FALSE}
@@ -450,10 +458,10 @@ c_blks_percent <- (sum(blks_raw$C_diff_flag == "YES")/nrow(blks_raw))*100
 n_blks_percent <- (sum(blks_raw$N_diff_flag == "YES")/nrow(blks_raw))*100
 
 #report out if flags indicate need for rerun
-ifelse(c_blks_percent >= chks_flag, ">60% of Carbon Blank concentrations are lower 25% quartile of samples",
-       "<60% of Carbon blaks are lower 25% quartile of samples - REASSESS")
-ifelse(n_blks_percent >= chks_flag, ">60% of Nitrogen Blank concentrations are lower 25% quartile of samples",
-       "<60% of Nitrogen blaks are lower 25% quartile of samples - REASSESS")
+ifelse(c_blks_percent >= chks_flag, ">60% of Carbon Blank concentrations are below the lower 25% quartile of samples",
+       "<60% of Carbon blanks are higher than the lower 25% quartile of samples - REASSESS")
+ifelse(n_blks_percent >= chks_flag, ">60% of Nitrogen Blank concentrations are below the lower 25% quartile of samples",
+       "<60% of Nitrogen blanks are higher than the lower 25% quartile of samples - REASSESS")
 
 
 #now plot the DOC concentrations and the TDN concentrations vs. the expected concentration 
@@ -506,6 +514,8 @@ if (n_blks_percent <= chks_flag) {  # assuming you have tn_chks_percent similarl
 }
 
 ```
+
+\newpage
 
 ## Assess Duplicates - if there are any 
 ```{r Check Duplicates, echo=FALSE}
@@ -603,6 +613,8 @@ if (n_dups_percent <= chks_flag) {  # assuming you have tn_chks_percent similarl
 
 ```
 
+\newpage
+
 ## Sample Flagging   
 ```{r Sample Flagging, echo=FALSE}
 
@@ -680,9 +692,13 @@ n_samples_flag <-  ggplot(data = dat_flag_viz, aes(x = sample_name, y = tdn_raw,
         theme(legend.position="none")  +
         theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 
-ggarrange(c_samples_flag, n_samples_flag, nrow=1, ncol=2)
+#ggarrange(c_samples_flag, n_samples_flag, nrow=1, ncol=2)
+print(c_samples_flag)
+print(n_samples_flag)
 
 ```
+
+\newpage
 
 ## Visualize Data by Plot   
 ```{r Visualize Data, echo=FALSE}
@@ -724,9 +740,13 @@ viz_n_plot <-  ggplot(data = dat_florplot, aes(x = Grid_Square, y = tdn_raw, fil
         theme_classic() + labs(x= " ", y="TN (mg/L)", title="Nitrogen by Plot") + 
         theme(legend.position="none") 
 
-ggarrange(viz_c_plot, viz_n_plot, nrow=1, ncol=2)
+#ggarrange(viz_c_plot, viz_n_plot, nrow=1, ncol=2)
+print(viz_c_plot)
+print(viz_n_plot)
 
 ```
+
+\newpage
 
 ## Convert data from mg/L to uMoles/L 
 ```{r, Unit Conversion, include=FALSE}
