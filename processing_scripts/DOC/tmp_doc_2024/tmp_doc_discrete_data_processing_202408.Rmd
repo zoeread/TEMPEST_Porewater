@@ -92,7 +92,7 @@ anyas_colors <- c('springgreen2', 'cyan2', 'violetred2')
 #inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
 inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit?gid=496164093#gid=496164093"
 
-directory= file.path(here() %>% dirname(), 'TEMPEST_Porewater/processing_scripts/DOC/tmp_doc_2024/tmp_doc_metadata_2024')
+directory= file.path(here() %>% dirname(), 'tmp_doc_2024/tmp_doc_metadata_2024')
 if(!dir.exists(directory)){
   stop("Directory does not exist, check directory path")
 }

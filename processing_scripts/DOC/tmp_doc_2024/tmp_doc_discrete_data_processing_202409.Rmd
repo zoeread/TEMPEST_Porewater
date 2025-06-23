@@ -1,6 +1,6 @@
 ---
 title: "COMPASS: TEMPEST Discrete DOC Data QAQC"
-author: "June & July 2024"
+author: "September 2024"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -14,17 +14,17 @@ cat("Run Information")
   #steph will add this soon 
   
 #anything that needs to be changed do this in the first chunk
-  Date_Run = "07/18/24"
+  Date_Run = "09/09/24"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
   run_notes = " "
   
   #file path and name for summary file 
-    raw_file_name = "tmp_doc_raw_data_2024/TMP_202406_07.txt" 
+    raw_file_name = "tmp_doc_raw_data_2024/TMP_202409.txt" 
   #file path and name for the all peaks file 
-    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202406_07_allpeaks.txt"
+    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202409_allpeaks.txt"
   #file path and name for processed data after QAQC
-    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202406_07.csv"
+    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202409.csv"
 
 #check standard concentrations - Update if running different checks: 
    chk_std_c = 1
@@ -54,7 +54,6 @@ cat("Setup")
   library(tidyverse)
   library(here)
   library(googledrive)
-  library(tinytex)
 
 #any coefficients / constants that are needed for calculations 
   mw_c <- 12   #molecular weight of Carbon 
@@ -171,7 +170,7 @@ cat("Assess the Standard Curve")
 #filter standards out of the raw data 
 stds_all <- raw_allpeaks_name %>% 
   map_df(read_curve) %>% 
-  filter(grepl("CalCurve", sample_name)) %>% 
+  filter(grepl("STD", sample_name)) %>% 
   dplyr::rename(
         standard_C_ppm = npoc_raw,
         standard_N_ppm = tdn_raw) %>%
@@ -355,7 +354,7 @@ cat("Assess the Check Standards")
 #call to checkstds orrrr Pull out check standards from raw file 
 chks_raw <- raw_file_name %>% 
   map_df(read_data) %>% 
-  filter(grepl("Chk", sample_name)) %>% # filter to TMP samples only
+  filter(grepl("Check", sample_name)) %>% # filter to TMP samples only
   bind_rows() 
 
 chks_raw <- chks_raw %>% 
@@ -439,7 +438,7 @@ cat("Assess Blanks")
 #Pull out check standards from raw file 
 blks_raw <- raw_file_name %>% 
   map_df(read_data) %>% 
-  filter(grepl("DI", sample_name)) %>% # filter to TMP samples only
+  filter(grepl("Blank", sample_name)) %>% # filter to TMP samples only
   bind_rows() 
 
 blks_raw <- blks_raw %>% 
