@@ -1,0 +1,66 @@
+[Header]	
+System	TOCL TNML ASIL 9ML	
+S/W Version	1.00	
+User	sjw	
+Date/Time	4/29/2025 5:10:24 PM	
+
+[System]	
+Instrument Options	TOC/ASI/IC Unit/TN/	
+
+[Data]	
+Type	Anal.	Sample Name	Sample ID	Result(TOC)	Result(TC)	Result(IC)	Result(POC)	Result(NPOC)	Result(TN)	Unit	Vial	Date / Time	
+Unknown	NPOC/TN	CondBlank	Untitled					0.4607	0.07156	mg/L	0	9/9/2024 11:13:37 AM	
+Unknown	NPOC/TN	CondBlank	Untitled					0.3938	0.1515	mg/L	0	9/9/2024 11:37:00 AM	
+Unknown	NPOC/TN	Blank	Untitled					0.4223	0.05649	mg/L	0	9/9/2024 12:02:40 PM	
+Unknown	NPOC/TN	1ppmCN_Check	Untitled					1.187	0.8454	mg/L	1	9/9/2024 12:34:52 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.4238	0.04998	mg/L	0	9/9/2024 12:59:57 PM	
+Unknown	NPOC/TN	50ppmC_2ppmN_Check	Untitled					48.41	1.993	mg/L	2	9/9/2024 1:31:37 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.4909	0.1279	mg/L	0	9/9/2024 1:54:20 PM	
+Standard	NPOC	STD_0-100ppmNPOC	Untitled					100.0		mg/L	0, 3, 4, 5, 6, 7, 8, 9, 10	9/9/2024 5:11:21 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.3881	0.08943	mg/L	0	9/9/2024 6:11:39 PM	
+Standard	TN	STD_0-3ppmTN	Untitled						3.000	mg/L	0, 11, 12, 13, 14, 15, 16	9/9/2024 9:18:22 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.3153	0.04204	mg/L	0	9/9/2024 9:43:52 PM	
+Unknown	NPOC/TN	1ppmCN_Check	Untitled					1.136	0.9415	mg/L	17	9/9/2024 10:13:38 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.2726	0.05365	mg/L	0	9/9/2024 10:37:11 PM	
+Unknown	NPOC/TN	50ppmC_2ppmN_Check	Untitled					48.74	2.200	mg/L	18	9/9/2024 10:59:11 PM	
+Unknown	NPOC/TN	GENX2_40222	Untitled					51.56	3.037	mg/L	19	9/9/2024 11:31:08 PM	
+Unknown	NPOC/TN	GENX2_40156	Untitled					45.56	3.137	mg/L	20	9/10/2024 12:15:11 AM	
+Unknown	NPOC/TN	GENX2_40178	Untitled					48.97	3.198	mg/L	21	9/10/2024 12:44:42 AM	
+Unknown	NPOC/TN	GENX2_40155	Untitled					44.56	2.790	mg/L	22	9/10/2024 1:10:48 AM	
+Unknown	NPOC/TN	GENX2_40250	Untitled					51.26	3.170	mg/L	23	9/10/2024 1:41:04 AM	
+Unknown	NPOC/TN	GENX2_40208	Untitled					63.33	4.198	mg/L	24	9/10/2024 2:10:56 AM	
+Unknown	NPOC/TN	GENX2_40188	Untitled					52.46	3.113	mg/L	25	9/10/2024 2:42:32 AM	
+Unknown	NPOC/TN	GENX2_40207	Untitled					57.65	3.945	mg/L	26	9/10/2024 3:13:07 AM	
+Unknown	NPOC/TN	GENX2_40045	Untitled					56.03	3.577	mg/L	27	9/10/2024 3:43:29 AM	
+Unknown	NPOC/TN	GENX2_40174	Untitled					45.76	2.948	mg/L	28	9/10/2024 4:14:23 AM	
+Unknown	NPOC/TN	GENX2_40174_DUP	Untitled					44.02	2.891	mg/L	29	9/10/2024 4:43:45 AM	
+Unknown	NPOC/TN	1ppmCN_Check	Untitled					1.266	0.9881	mg/L	30	9/10/2024 5:15:07 AM	
+Unknown	NPOC/TN	Blank	Untitled					0.3652	0.07532	mg/L	0	9/10/2024 5:40:42 AM	
+Unknown	NPOC/TN	GENX2_40251	Untitled					51.39	3.176	mg/L	31	9/10/2024 6:10:21 AM	
+Unknown	NPOC/TN	GENX2_40209	Untitled					61.40	3.695	mg/L	32	9/10/2024 6:40:21 AM	
+Unknown	NPOC/TN	GENX2_40162	Untitled					58.22	3.494	mg/L	33	9/10/2024 7:10:22 AM	
+Unknown	NPOC/TN	GENX2_40181	Untitled					74.39	4.642	mg/L	34	9/10/2024 7:40:58 AM	
+Unknown	NPOC/TN	GENX2_40202	Untitled					70.72	3.980	mg/L	35	9/10/2024 8:11:32 AM	
+Unknown	NPOC/TN	GENX2_40205	Untitled					46.25	2.830	mg/L	36	9/10/2024 8:42:24 AM	
+Unknown	NPOC/TN	GENX2_40191	Untitled					59.34	3.416	mg/L	37	9/10/2024 9:14:47 AM	
+Unknown	NPOC/TN	GENX2_40192	Untitled					45.46	2.934	mg/L	38	9/10/2024 9:45:02 AM	
+Unknown	NPOC/TN	GENX2_40193	Untitled					65.41	3.732	mg/L	39	9/10/2024 10:17:20 AM	
+Unknown	NPOC/TN	GENX2_40194	Untitled					57.21	3.268	mg/L	40	9/10/2024 10:54:22 AM	
+Unknown	NPOC/TN	GENX2_40194_DUP	Untitled					56.54	3.328	mg/L	41	9/10/2024 11:24:07 AM	
+Unknown	NPOC/TN	50ppmC_2ppmN_Check	Untitled					51.73	1.948	mg/L	42	9/10/2024 11:57:56 AM	
+Unknown	NPOC/TN	Blank	Untitled					0.4810	0.04194	mg/L	0	9/10/2024 12:20:35 PM	
+Unknown	NPOC/TN	GENX2_40186	Untitled					40.44	2.588	mg/L	43	9/10/2024 12:54:14 PM	
+Unknown	NPOC/TN	GENX2_40206	Untitled					78.00	4.506	mg/L	44	9/10/2024 1:27:09 PM	
+Unknown	NPOC/TN	GENX2_40154	Untitled					64.00	3.762	mg/L	45	9/10/2024 1:59:47 PM	
+Unknown	NPOC/TN	GENX2_40203	Untitled					50.25	2.928	mg/L	46	9/10/2024 2:32:32 PM	
+Unknown	NPOC/TN	TMP_SW_C3_15cm	Untitled					9.329	0.6664	mg/L	47	9/10/2024 3:03:33 PM	
+Unknown	NPOC/TN	TMP_SW_D5_15cm	Untitled					5.781	0.2683	mg/L	48	9/10/2024 3:32:19 PM	
+Unknown	NPOC/TN	TMP_SW_F6_15cm	Untitled					6.013	0.3530	mg/L	49	9/10/2024 4:01:16 PM	
+Unknown	NPOC/TN	GENX2_40168_HN	Untitled					46.25	2.549	mg/L	50	9/10/2024 4:32:14 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.4393	0.1621	mg/L	0	9/10/2024 4:55:36 PM	
+Unknown	NPOC/TN	1ppmCN_Check	Untitled					1.292	1.063	mg/L	51	9/10/2024 5:26:46 PM	
+Unknown	NPOC/TN	GENX2_40197_HN	Untitled					6.009	26.82	mg/L	52	9/10/2024 5:56:33 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.2798	0.09627	mg/L	0	9/10/2024 6:19:34 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.3249	0.03243	mg/L	0	9/10/2024 6:43:34 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.3240	0.06756	mg/L	0	9/10/2024 7:08:24 PM	
+Unknown	NPOC/TN	Blank	Untitled					0.2357	0.09294	mg/L	0	9/10/2024 7:31:27 PM	
