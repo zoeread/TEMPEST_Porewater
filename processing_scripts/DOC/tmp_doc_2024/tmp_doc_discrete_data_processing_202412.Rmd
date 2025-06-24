@@ -1,6 +1,6 @@
 ---
 title: "COMPASS: TEMPEST Discrete DOC Data QAQC"
-author: "June & July 2024"
+author: "December 2024"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -14,21 +14,21 @@ cat("Run Information")
   #steph will add this soon 
   
 #anything that needs to be changed do this in the first chunk
-  Date_Run = "07/18/24"
+  Date_Run = "12/18/24"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
   run_notes = " "
   
   #file path and name for summary file 
-    raw_file_name = "tmp_doc_raw_data_2024/TMP_202406_07.txt" 
+    raw_file_name = "tmp_doc_raw_data_2024/TMP_202412.txt" 
   #file path and name for the all peaks file 
-    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202406_07_allpeaks.txt"
+    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202412_allpeaks.txt"
   #file path and name for processed data after QAQC
-    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202406_07.csv"
+    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202412.csv"
 
 #check standard concentrations - Update if running different checks: 
-   chk_std_c = 1
-   chk_std_n = 1
+   chk_std_c = 50
+   chk_std_n = 2
     
 #Log path 
     Log_path = "tmp_doc_raw_data_2024/COMPASS_TMP_TOCTN_QAQClog_2024.csv"
@@ -54,7 +54,6 @@ cat("Setup")
   library(tidyverse)
   library(here)
   library(googledrive)
-  library(tinytex)
 
 #any coefficients / constants that are needed for calculations 
   mw_c <- 12   #molecular weight of Carbon 
@@ -519,7 +518,7 @@ if (n_blks_percent <= chks_flag) {  # assuming you have tn_chks_percent similarl
 \newpage
 
 ## Assess Duplicates - if there are any 
-```{#r Check Duplicates, echo=FALSE}
+```{r Check Duplicates, echo=FALSE}
 
 cat("Assess Duplicates")
 
@@ -710,7 +709,7 @@ cat("Visualize Data")
 
 #Plot samples to get a first look at concentrations (sanity check)
 IDs <- data.frame(do.call('rbind', strsplit(as.character(dat_flagged$sample_name),'_',fixed=TRUE)))
-colnames(IDs) <- c("Site_Code" ,"Plot", "Grid_Square",  "Date")
+colnames(IDs) <- c("Site_Code" , "Plot", "Grid_Square", "Date", "Extra")
 head(IDs)
 
 #rejoin them to the dataframe
