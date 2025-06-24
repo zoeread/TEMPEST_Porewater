@@ -1,6 +1,6 @@
 ---
 title: "COMPASS: TEMPEST Discrete DOC Data QAQC"
-author: "August 2024 run 2"
+author: "June & July 2024"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -14,17 +14,18 @@ cat("Run Information")
   #steph will add this soon 
   
 #anything that needs to be changed do this in the first chunk
-  Date_Run = "09/05/24"
+  Date_Run = "09/09/24"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
-  run_notes = " "
+  run_notes = "The TN curves are not good, samples were re-analyzed on the TOC 
+      with a good curve from another run and then the TN analyzer was serviced."
   
   #file path and name for summary file 
-    raw_file_name = "tmp_doc_raw_data_2024/TMP_202408.txt" 
+    raw_file_name = "tmp_doc_raw_data_2024/TMP_202406_07.txt" 
   #file path and name for the all peaks file 
-    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202408_allpeaks.txt"
+    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202406_07_allpeaks.txt"
   #file path and name for processed data after QAQC
-    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202408a.csv"
+    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202406_07.csv"
 
 #check standard concentrations - Update if running different checks: 
    chk_std_c = 1
@@ -295,7 +296,7 @@ log <- read.csv(Log_path)
 log <- log[ ,-c(1)]
 
 #make sure they both have dates as dates 
-log$run_date <- as.Date(log$run_date, format = "%m/%d/%y")
+log$run_date <- as.Date(log$run_date)
 log$analyte <- as.character(log$analyte)
 log$curve <- as.character(log$curve)
 Slopes$run_date <- as.Date(Slopes$run_date)
@@ -518,7 +519,7 @@ if (n_blks_percent <= chks_flag) {  # assuming you have tn_chks_percent similarl
 \newpage
 
 ## Assess Duplicates - if there are any 
-```{r Check Duplicates, echo=FALSE}
+```{#r Check Duplicates, echo=FALSE}
 
 cat("Assess Duplicates")
 
@@ -638,8 +639,8 @@ dat_flagged <- dat_raw %>%
       blk_avg_c > 0.25 * npoc_raw,
       if_else(
         npoc_flag != "" & !is.na(npoc_flag),
-        paste0(npoc_flag, "; blank is ≥ 25% of sample value"),
-        "blank is ≥ 25% of sample value"
+        paste0(npoc_flag, "; blank is > 25% of sample value"),
+        "blank is > 25% of sample value"
       ),
       npoc_flag
     ),
@@ -657,8 +658,8 @@ dat_flagged <- dat_raw %>%
       blk_avg_n > 0.25 * tdn_raw,
       if_else(
         tdn_flag != "" & !is.na(tdn_flag),
-        paste0(tdn_flag, "; blank is ≥ 25% of sample value"),
-        "blank is ≥ 25% of sample value"
+        paste0(tdn_flag, "; blank is > 25% of sample value"),
+        "blank is > 25% of sample value"
       ),
       tdn_flag
     )
@@ -667,11 +668,11 @@ dat_flagged <- dat_raw %>%
 #lets make a dataframe with just the concentration flag for plotting 
 dat_flag_viz <- dat_raw %>% 
   mutate(npoc_flag = case_when(npoc_raw > top_std_c ~ "value above cal curve",
-            blk_avg_c > 0.25*npoc_raw ~ "blank is ≥ 25% of sample value"), # flagging if blank concentration is > 20% of the sample concentration
+            blk_avg_c > 0.25*npoc_raw ~ "blank is > 25% of sample value"), # flagging if blank concentration is > 20% of the sample concentration
             #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), # if needed and there are issues with sample names
     
         tdn_flag = case_when(tdn_raw > top_std_n ~ "value above cal curve",
-            blk_avg_n > 0.25*tdn_raw ~ "blank is ≥ 25% of sample value") #, # flagging if blank concentration is > 25% of the sample concentration
+            blk_avg_n > 0.25*tdn_raw ~ "blank is > 25% of sample value") #, # flagging if blank concentration is > 25% of the sample concentration
           #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), # if needed and there are issues with sample names
  )
 
@@ -709,7 +710,7 @@ cat("Visualize Data")
 
 #Plot samples to get a first look at concentrations (sanity check)
 IDs <- data.frame(do.call('rbind', strsplit(as.character(dat_flagged$sample_name),'_',fixed=TRUE)))
-colnames(IDs) <- c("Site_Code" , "Date","Plot", "Grid_Square",  "Extra")
+colnames(IDs) <- c("Site_Code" ,"Plot", "Grid_Square",  "Date")
 head(IDs)
 
 #rejoin them to the dataframe

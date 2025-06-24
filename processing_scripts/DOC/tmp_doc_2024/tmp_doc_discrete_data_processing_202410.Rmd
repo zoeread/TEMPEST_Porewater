@@ -1,6 +1,6 @@
 ---
 title: "COMPASS: TEMPEST Discrete DOC Data QAQC"
-author: "September 2024"
+author: "October 2024"
 date: "`r Sys.Date()`"
 output: pdf_document
 ---
@@ -14,22 +14,21 @@ cat("Run Information")
   #steph will add this soon 
   
 #anything that needs to be changed do this in the first chunk
-  Date_Run = "09/10/24"
+  Date_Run = "10/13/24"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
-  run_notes = "This run the samples names were not put in correctly, they are
-      changed in the code to be the correct format"
+  run_notes = "Need to check this run on the instrument computer."
   
   #file path and name for summary file 
-    raw_file_name = "tmp_doc_raw_data_2024/TMP_202409.txt" 
+    raw_file_name = "tmp_doc_raw_data_2024/TMP_202410.txt" 
   #file path and name for the all peaks file 
-    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202409_allpeaks.txt"
+    raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202410_allpeaks.txt"
   #file path and name for processed data after QAQC
-    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202409.csv"
+    processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202410.csv"
 
 #check standard concentrations - Update if running different checks: 
-   chk_std_c = 1
-   chk_std_n = 1
+   chk_std_c = 50
+   chk_std_n = 2
     
 #Log path 
     Log_path = "tmp_doc_raw_data_2024/COMPASS_TMP_TOCTN_QAQClog_2024.csv"
@@ -64,9 +63,9 @@ cat("Setup")
 
 #Flag that we 
   r2_cutoff = 0.98  #this is the level below which we want to rerun or consider a curve 
-  chk_flag = 0.20   #if the RSD (relative standard deviation) is over 1 among checks this is the std dev. / mean  
+  chk_flag = 0.10   #if the RSD (relative standard deviation) is over 1 among checks this is the std dev. / mean  
   chks_flag = 60    #this is the percent of checks we want to be within range (at least) or else we will flag the data 
-  chk_conc_flag = 20 #this is the level cutoff for percent difference of check standards vs. the concentration they are meant to be 
+  chk_conc_flag = 15 #this is the level cutoff for percent difference of check standards vs. the concentration they are meant to be 
   rep_flag = 25 #this is a 25% error between samples
   #blank_flag is calculated based on samples later in this code
    
@@ -159,12 +158,6 @@ dat_raw <- raw_file_name %>%
   bind_rows() 
 
 head(dat_raw)
-
-#added code because sample names were input wrongly
-dat_raw <- dat_raw %>%
-  mutate(sample_name = sub("_15cm$", "_20240906", sample_name))
-
-
 ```
 
 \newpage
@@ -177,7 +170,7 @@ cat("Assess the Standard Curve")
 #filter standards out of the raw data 
 stds_all <- raw_allpeaks_name %>% 
   map_df(read_curve) %>% 
-  filter(grepl("STD", sample_name)) %>% 
+  filter(grepl("Cal", sample_name)) %>% 
   dplyr::rename(
         standard_C_ppm = npoc_raw,
         standard_N_ppm = tdn_raw) %>%
@@ -361,7 +354,7 @@ cat("Assess the Check Standards")
 #call to checkstds orrrr Pull out check standards from raw file 
 chks_raw <- raw_file_name %>% 
   map_df(read_data) %>% 
-  filter(grepl("1ppmCN_Check", sample_name)) %>% # filter to TMP samples only
+  filter(grepl("Chk", sample_name)) %>% # filter to TMP samples only
   bind_rows() 
 
 chks_raw <- chks_raw %>% 
@@ -393,7 +386,7 @@ c_chks <-  ggplot(data = chks_raw, aes(x = rep, y = npoc_raw, fill=C_diff_flag))
         theme_classic() + labs(x= " ", y="NPOC (mg/L)", title="Check Stds: NPOC") + 
         theme(legend.position="bottom") +  geom_hline(yintercept=chk_std_c,
               linetype="dashed", color = "black", linewidth=1) + 
-              guides(fill=guide_legend(title="% Difference <20%"))
+              guides(fill=guide_legend(title="% Difference <10%"))
 
 
 n_chks <-  ggplot(data = chks_raw, aes(x = rep, y = tdn_raw, fill=N_diff_flag)) +
@@ -402,7 +395,7 @@ n_chks <-  ggplot(data = chks_raw, aes(x = rep, y = tdn_raw, fill=N_diff_flag)) 
         theme_classic() + labs(x= " ", y="TN  (mg/L)", title="Check Stds: TN") + 
         theme(legend.position="bottom") +  geom_hline(yintercept=chk_std_n,
               linetype="dashed",  color = "black", linewidth=1) + 
-              guides(fill=guide_legend(title="% Difference <20%"))
+              guides(fill=guide_legend(title="% Difference <10%"))
 
 ggarrange(c_chks, n_chks, nrow=1, ncol=2)
 
@@ -445,7 +438,7 @@ cat("Assess Blanks")
 #Pull out check standards from raw file 
 blks_raw <- raw_file_name %>% 
   map_df(read_data) %>% 
-  filter(grepl("Blank", sample_name)) %>% # filter to TMP samples only
+  filter(grepl("DI", sample_name)) %>% # filter to TMP samples only
   bind_rows() 
 
 blks_raw <- blks_raw %>% 
@@ -524,8 +517,8 @@ if (n_blks_percent <= chks_flag) {  # assuming you have tn_chks_percent similarl
 
 \newpage
 
-## Assess Duplicates - NO Duplicates in this run
-```{r Check Duplicates, eval=FALSE, include=FALSE}
+## Assess Duplicates - if there are any 
+```{r Check Duplicates, echo=FALSE}
 
 cat("Assess Duplicates")
 
@@ -645,8 +638,8 @@ dat_flagged <- dat_raw %>%
       blk_avg_c > 0.25 * npoc_raw,
       if_else(
         npoc_flag != "" & !is.na(npoc_flag),
-        paste0(npoc_flag, "; blank is < 25% of sample value"),
-        "blank is < 25% of sample value"
+        paste0(npoc_flag, "; blank is ≥ 25% of sample value"),
+        "blank is ≥ 25% of sample value"
       ),
       npoc_flag
     ),
@@ -664,8 +657,8 @@ dat_flagged <- dat_raw %>%
       blk_avg_n > 0.25 * tdn_raw,
       if_else(
         tdn_flag != "" & !is.na(tdn_flag),
-        paste0(tdn_flag, "; blank is < 25% of sample value"),
-        "blank is < 25% of sample value"
+        paste0(tdn_flag, "; blank is ≥ 25% of sample value"),
+        "blank is ≥ 25% of sample value"
       ),
       tdn_flag
     )
@@ -674,11 +667,11 @@ dat_flagged <- dat_raw %>%
 #lets make a dataframe with just the concentration flag for plotting 
 dat_flag_viz <- dat_raw %>% 
   mutate(npoc_flag = case_when(npoc_raw > top_std_c ~ "value above cal curve",
-            blk_avg_c > 0.25*npoc_raw ~ "blank is < 25% of sample value"), # flagging if blank concentration is > 20% of the sample concentration
+            blk_avg_c > 0.25*npoc_raw ~ "blank is ≥ 25% of sample value"), # flagging if blank concentration is > 20% of the sample concentration
             #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), # if needed and there are issues with sample names
     
         tdn_flag = case_when(tdn_raw > top_std_n ~ "value above cal curve",
-            blk_avg_n > 0.25*tdn_raw ~ "blank is < 25% of sample value") #, # flagging if blank concentration is > 25% of the sample concentration
+            blk_avg_n > 0.25*tdn_raw ~ "blank is ≥ 25% of sample value") #, # flagging if blank concentration is > 25% of the sample concentration
           #sample_name == "TMP_SW_F4_T3" ~ "incorrect sample naming, cannot resolve"), # if needed and there are issues with sample names
  )
 
@@ -716,7 +709,7 @@ cat("Visualize Data")
 
 #Plot samples to get a first look at concentrations (sanity check)
 IDs <- data.frame(do.call('rbind', strsplit(as.character(dat_flagged$sample_name),'_',fixed=TRUE)))
-colnames(IDs) <- c("Site_Code" ,"Plot", "Grid_Square",  "Date")
+colnames(IDs) <- c("Site_Code" ,"Date", "Plot", "Grid_Square",  "Extra")
 head(IDs)
 
 #rejoin them to the dataframe
@@ -726,7 +719,8 @@ head(dat_florplot)
 dat_florplot <- dat_florplot %>% 
   mutate(Plot_name = case_when(Plot == 'SW' ~ "Saltwater", 
                                Plot == 'FW' ~ "Freshwater", 
-                               Plot == 'CTRL' ~ "Control"))
+                               Plot == 'CTRL' ~ "Control", 
+                               Plot == 'CON' ~ "Control"))
 
 
 #Plot data and change colors based on flags to check it: 
