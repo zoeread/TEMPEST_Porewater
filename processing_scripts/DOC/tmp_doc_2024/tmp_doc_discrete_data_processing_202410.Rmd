@@ -17,7 +17,8 @@ cat("Run Information")
   Date_Run = "10/13/24"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
-  run_notes = "Need to check this run on the instrument computer."
+  run_notes = "The TN went down during this run and there were no peaks for samples, 
+    and there was not enough volume to rerun - making TN NAs for these samples"
   
   #file path and name for summary file 
     raw_file_name = "tmp_doc_raw_data_2024/TMP_202410.txt" 
@@ -517,8 +518,8 @@ if (n_blks_percent <= chks_flag) {  # assuming you have tn_chks_percent similarl
 
 \newpage
 
-## Assess Duplicates - if there are any 
-```{r Check Duplicates, echo=FALSE}
+## Assess Duplicates - No duplicates 
+```{#r Check Duplicates, echo=FALSE}
 
 cat("Assess Duplicates")
 
@@ -709,7 +710,7 @@ cat("Visualize Data")
 
 #Plot samples to get a first look at concentrations (sanity check)
 IDs <- data.frame(do.call('rbind', strsplit(as.character(dat_flagged$sample_name),'_',fixed=TRUE)))
-colnames(IDs) <- c("Site_Code" ,"Date", "Plot", "Grid_Square",  "Extra")
+colnames(IDs) <- c("Site_Code" ,"Date", "Plot", "Grid_Square")
 head(IDs)
 
 #rejoin them to the dataframe
@@ -837,6 +838,15 @@ final_data <- final_data %>%
   )
 
 head(final_data)
+
+#### ADDED CODE DUE TO TN ISSUES WITH THIS RUN ####
+final_data <- final_data %>% 
+  #select(Project, Plot, grid, sample_name, Vial_ID, date, ) %>%
+  mutate(
+    tdn_mgL = "NA", 
+    tdn_uM = "NA",
+    tdn_flag = "TN broken, no data"
+  ) 
 
 #will put final data in processed data folder 
   write.csv(final_data, processed_file_name)
