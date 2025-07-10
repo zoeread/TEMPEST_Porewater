@@ -709,7 +709,7 @@ cat("Visualize Data")
 
 #Plot samples to get a first look at concentrations (sanity check)
 IDs <- data.frame(do.call('rbind', strsplit(as.character(dat_flagged$sample_name),'_',fixed=TRUE)))
-colnames(IDs) <- c("Site_Code" , "Date","Plot", "Grid_Square",  "Extra")
+colnames(IDs) <- c("Site_Code" , "Plot", "Grid_Square", "Date",  "Extra")
 head(IDs)
 
 #rejoin them to the dataframe
