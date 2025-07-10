@@ -20,9 +20,9 @@ Standard	TN	CalCurve_TN	Untitled						3.000	mg/L	10, 11, 12, 13, 14, 15, 16	9/5/
 Unknown	NPOC/TN	DI	Untitled					0.3275	0.05053	mg/L	0	9/5/2024 8:13:25 PM	
 Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.106	0.9364	mg/L	17	9/5/2024 8:43:37 PM	
 Unknown	NPOC/TN	DI	Untitled					0.2431	0.04824	mg/L	0	9/5/2024 9:06:56 PM	
-Unknown	NPOC/TN	TMP_20240812_SW_C6	Untitled					11.55	2.097	mg/L	18	9/5/2024 9:35:07 PM	
-Unknown	NPOC/TN	TMP_20240812_SW_C6_dup	Untitled					11.59	2.171	mg/L	19	9/5/2024 10:07:22 PM	
-Unknown	NPOC/TN	TMP_20240812_SW_E3	Untitled					4.861	0.3165	mg/L	20	9/5/2024 10:38:39 PM	
+Unknown	NPOC/TN	TMP_SW_C6_20240812	Untitled					11.55	2.097	mg/L	18	9/5/2024 9:35:07 PM	
+Unknown	NPOC/TN	TMP_SW_C6_20240812_dup	Untitled					11.59	2.171	mg/L	19	9/5/2024 10:07:22 PM	
+Unknown	NPOC/TN	TMP_SW_E3_20240812	Untitled					4.861	0.3165	mg/L	20	9/5/2024 10:38:39 PM	
 Unknown	NPOC/TN	DI	Untitled					0.2773	0.07774	mg/L	0	9/5/2024 11:01:37 PM	
 Unknown	NPOC/TN	Chk_Std_1CN	Untitled					1.082	0.9115	mg/L	21	9/5/2024 11:31:52 PM	
 Unknown	NPOC/TN	LatT_SWH_INCUB_T2-1	Untitled					5.524	0.4982	mg/L	22	9/6/2024 12:01:04 AM	
