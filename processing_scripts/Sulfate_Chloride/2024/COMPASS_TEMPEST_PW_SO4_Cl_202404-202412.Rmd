@@ -20,8 +20,20 @@ lapply(c(
   "dplyr", "ggplot2", "ggpubr", "stringr",
   "purrr", "tidyverse", "here", "broom", "tibble",
   "googledrive", "googlesheets4", "data.table", 
-  "matrixStats", "gridExtra", "grid", "tidyverse", "knitr"), 
+  "matrixStats", "gridExtra", "grid", "readxl"), 
   library, character.only = TRUE)
+
+#Packages for loading metadata
+require(pacman)
+pacman::p_load(janitor, # useful for simplifying column names
+               googlesheets4, # read_sheet 
+               googledrive, # drive_ functions
+               plotrix,
+               here) 
+
+common_tz = "Etc/GMT+5"
+
+Sys.setenv(TZ = "America/New_York")
 
 ```
 
@@ -30,15 +42,13 @@ lapply(c(
 ```{r Run Information, echo=TRUE, message=FALSE, warning=FALSE}
 
 ###### Run information - PLEASE CHANGE
+  Sample_Year = "2024"  
   Date_Run = "2025-08-13"  #Date that instrument was run
   Run_by = "Zoe Read"  #Instrument user 
   Script_run_by = "Zoe Read" #Code user 
-  run_notes = "The third check standard 3 is very low for SO4 and Cl, and check standard 1 is low for SO4. 
-  86_TEMPEST_FW_RAINWATER_202412_DUP had high CV for Cl - need to check the peaks. 
+  run_notes = "Check standard 1 is low for SO4. 
+  Some sample IDs are missing from metadata: TMP_SW_B4_20240426_15CM, TMP_SW_B4_20240711_15CM, TMP_SW_F6_20241111_15CM
   " #any notes from the run
-  samples <- c("GCW", "GWI", "MSM", "SWH") #whatever identifies your samples within the same names 
-  samples_pattern <- paste(samples, collapse = "|") 
-    #samples_pattern <- "GCW" #use this instead of the line above if you have only one site code 
 
 ###### File Names - PLEASE CHANGE 
 #file path and name for raw summary data file 
@@ -49,9 +59,10 @@ lapply(c(
   processed_file_name = "Processed Data/COMPASS_TEMPEST_Processed_Cl_SO4_202404-202412.csv" 
 
 ###### Log Files - PLEASE CHECK 
-#downloaded metadata csv - downloaded from Google drive as csv for this year
-  ####Is there TEMPEST metadata?####
-  Raw_Metadata = "Raw Data/COMPASS_SynopticCB_PW_SampleLog_2024.csv"
+# #downloaded metadata csv - downloaded from Google drive as csv for this year
+#   ####Is there TEMPEST metadata?####
+#   Raw_Metadata_Lys = "Raw Data/TEMPEST_PorewaterInventory_May2022_Present_Lysimeters.csv"
+#   Raw_Metadata_SW = "Raw Data/TEMPEST_PorewaterInventory_May2022_Present_SourceWater.csv"
 
 #qaqc log file path for this year copied over from COMPASS GitHub
   Log_path = "Raw Data/COMPASS_Synoptic_Cl_SO4_QAQClog_2024.csv"
@@ -104,59 +115,131 @@ lapply(c(
 
 ```
 
-##Read in metadata and create similar sample IDs for matching to samples 
+## Pull in active porewater tracking inventory sheet from Google Drive: 
+```{r rest of metadata}
+
+inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
+
+drive_download(inventory_directory, overwrite = TRUE)
+
+sheet_names <- excel_sheets("TEMPEST_PorewaterInventory_May2022_Present.xlsx")
+sheet_names
+
+raw_metadata_lys <- read_excel("TEMPEST_PorewaterInventory_May2022_Present.xlsx", sheet = "Porewater - Individual", skip = 3)
+
+raw_metadata_sw <- read_excel("TEMPEST_PorewaterInventory_May2022_Present.xlsx", sheet = "Source Water", skip = 3)
+
+
+```
+
+
+##Create similar sample IDs to match with run samples 
 ```{r pull in metadata for later, include=FALSE}
 
-#read in the raw metadata file 
-raw_metadata <- read.csv(Raw_Metadata)
+#select SO4/Cl samples 
+raw_metadata_lys <- subset(raw_metadata_lys, Analyte == "SO4/Cl/H2S")
 
-#make a new columns in the metadata with important info:
-metadata <- raw_metadata %>%
-  mutate(Depth = paste0(Depth_cm, "cm")) %>%
-  mutate(LysID = paste0("Lys", Lysimeter)) %>%
-  mutate(YearMonth = sprintf("%d%02d", Year, Month))  %>%
-  mutate(Zone = case_when(
-    `Transect.Location` == "Transition" ~ "TR",
-    `Transect.Location` == "Wetland"    ~ "WC",
-    `Transect.Location` == "Upland"     ~ "UP",   
-    `Transect.Location` == "Surface Water" ~ "SW",
-    TRUE                 ~ `Transect.Location`    # keep original value if no match
-  ))
+#select 2024 samples
+raw_metadata_lys_year <- raw_metadata_lys %>%  
+  filter(str_detect(Sample_ID, Sample_Year))
 
-#Create IDs from what was collected for comparison later
-metadata <- metadata %>%
-  mutate(Cl_SO4_ID = ifelse(SO4 == "x",
-                                     paste(Site,
-                                           YearMonth,
-                                           Zone,
-                                           LysID,
-                                           Depth,
-                                           sep = "_"),
-                                     NA),  )
+#select event samples 
+raw_metadata_lys_event <- raw_metadata_lys_year %>%  
+  filter(str_detect(Sample_ID, "_T"))
 
-#Change the SW lines because they don't have lysimeters or a depth  
-metadata <- metadata %>%
-  mutate(
-    Cl_SO4_ID = if_else(
-      Zone == "SW",
-      # Modify the string:
-      Cl_SO4_ID %>%
-        str_replace("_LysA", "_A") %>%                    # Replace "_LysA" with "_A"
-        str_replace("_LysB", "_B") %>%                    # Replace "_LysB" with "_B"
-        str_replace("_LysC", "_C") %>%                    # Replace "_LysC" with "_C"
-        str_replace("_0cm$", ""),                          # Remove trailing "_0cm"
-      Cl_SO4_ID  # else keep original
-    )
-  )
+#separate event samples into columns
+raw_metadata_lys_event <- raw_metadata_lys_event %>%
+  separate(
+    col = Sample_ID,
+    sep = "_",
+    into = c("Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Event_Time", "Collection_Date", "Time_of_day"),
+    remove = FALSE)
 
-#Take out the columns and rows that are not relevant
-dionex_metadata <- metadata %>%
-  select(Cl_SO4_ID, Year, Month, Day, YearMonth, Site, Zone, Lysimeter, LysID, Depth_cm, 
-         Depth, Time..24hr., Time.Zone_EDT.EST, Field.Notes, ) %>%        
-  # only keep specific columns
-  filter(!is.na(Cl_SO4_ID) & Cl_SO4_ID != "")  # remove missing/blank Cl_SO4_ID rows
+#select non-event samples 
+raw_metadata_lys_monmon <- raw_metadata_lys_year %>%  
+  filter(!str_detect(Sample_ID, "_T"))
 
-head(dionex_metadata)
+#separate non-event samples into columns
+raw_metadata_lys_monmon <- raw_metadata_lys_monmon %>%
+  separate(
+    col = Sample_ID,
+    sep = "_",
+    into = c("Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Collection_Date", "Event_Time", "Time_of_day"),
+    remove = FALSE)
+
+#combine event and non-event samples 
+raw_metadata_lys_combined <- rbind(raw_metadata_lys_event, raw_metadata_lys_monmon)
+raw_metadata_lys_combined <- raw_metadata_lys_combined %>%
+  select("Sample_ID", "Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Collection_Date", "Event_Time", "Time_of_day", "Volume_mL")
+
+
+#create IDs from what was collected for comparison later
+raw_metadata_lys_combined <- raw_metadata_lys_combined %>%
+  mutate(Cl_SO4_ID = paste(Project,
+                          Zone,
+                          Grid,
+                          Collection_Date, 
+                          Depth, 
+                          sep = "_"))
+
+
+
+#select SO4/Cl samples 
+raw_metadata_sw <- raw_metadata_sw %>%  
+  filter(str_detect(Sample_ID, "SO4"))
+
+#select 2024 samples
+raw_metadata_sw_year <- raw_metadata_sw %>%  
+  filter(str_detect(Sample_ID, Sample_Year))
+
+#select rainwater samples 
+raw_metadata_sw_rw <- raw_metadata_sw_year %>%  
+  filter(str_detect(Sample_ID, "_Rainwater"))
+
+#separate event samples into columns
+raw_metadata_sw_rw <- raw_metadata_sw_rw %>%
+  separate(
+    col = Sample_ID,
+    sep = "_",
+    into = c("Project", NA, "Source", "Zone", "Analyte", "Collection_Date", "Grid", "Depth", "Event_Time", "Time_of_day"),
+    remove = FALSE)
+
+#select sourcewater samples 
+raw_metadata_sw_sw <- raw_metadata_sw_year %>%  
+  filter(!str_detect(Sample_ID, "_Rainwater"))
+
+#separate samples into columns
+raw_metadata_sw_sw <- raw_metadata_sw_sw %>%
+  separate(
+    col = Sample_ID,
+    sep = "_",
+    into = c("Project", "Source", "Zone", "Analyte", "Collection_Date", "Time_of_day", "Grid", "Depth", "Event_Time"),
+    remove = FALSE)
+
+#combine rw and sw samples 
+raw_metadata_sw_combined <- rbind(raw_metadata_sw_rw, raw_metadata_sw_sw)
+raw_metadata_sw_combined <- raw_metadata_sw_combined %>%
+  select("Sample_ID", "Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Collection_Date", "Event_Time", "Time_of_day", "Volume_mL")
+
+#change "Source" to "Sourcewater" 
+raw_metadata_sw_combined$Source <- replace(raw_metadata_sw_combined$Source, raw_metadata_sw_combined$Source == "Source", "SourceWater")
+
+#create IDs from what was collected for comparison later
+raw_metadata_sw_combined <- raw_metadata_sw_combined %>%
+  mutate(Cl_SO4_ID = paste(Project,
+                          Zone,
+                          Source, 
+                          Collection_Date, 
+                          sep = "_"))
+
+
+#combine porewater and sourcewater samples
+dionex_metadata <- rbind(raw_metadata_lys_combined, raw_metadata_sw_combined)
+
+#remove old ID's
+dionex_metadata$Sample_ID <- NULL
+
+# head(dionex_metadata)
 
 ```
 
@@ -989,15 +1072,25 @@ knitr::kable(Perc_Cl_flagged, caption = "Cl samples")
 
 #remove duplicates from the sample dataframe bc we are just taking the first dup run
 all_data_flagged <- dat_flagged %>%
-  filter(!str_detect(sample_ID, "dup")) %>%
+  filter(!str_detect(sample_ID, "DUP")) %>%
   filter(!str_detect(sample_ID, "Lab Blank")) %>%
-  filter(!str_detect(sample_ID, "spk")) %>%
+  filter(!str_detect(sample_ID, "SPK")) %>%
   mutate(sample_ID = sub("^[^_]+_", "", sample_ID))
   #select(!Excess_Info)
+
+#change TEMPEST to TMP
+all_data_flagged <- all_data_flagged %>%
+  mutate(sample_ID = str_replace(sample_ID, "TEMPEST", "TMP"))
 
 #check to see if all samples are present in the metadata 
 all_data_flagged$sample_ID <- toupper(all_data_flagged$sample_ID)
 dionex_metadata$Cl_SO4_ID <- toupper(dionex_metadata$Cl_SO4_ID)
+
+####Add date to Rainwater Samples####
+all_data_flagged$sample_ID <- replace(all_data_flagged$sample_ID, all_data_flagged$sample_ID == "TMP_SW_RAINWATER_202412", "TMP_SW_RAINWATER_20241212")
+all_data_flagged$sample_ID <- replace(all_data_flagged$sample_ID, all_data_flagged$sample_ID == "TMP_FW_RAINWATER_202412", "TMP_FW_RAINWATER_20241212")
+all_data_flagged$sample_ID <- replace(all_data_flagged$sample_ID, all_data_flagged$sample_ID == "TMP_C_RAINWATER_202412", "TMP_C_RAINWATER_20241212")
+
 
 all_present <- all(all_data_flagged$sample_ID %in% dionex_metadata$Cl_SO4_ID)
 
@@ -1011,30 +1104,18 @@ if (all_present) {
   print(missing_ids)
 }
 
-dionex_metadata_selected <- dionex_metadata %>%
-  select(Cl_SO4_ID, Year, Month, Day, Depth_cm, Lysimeter, Time..24hr., Time.Zone_EDT.EST,  Field.Notes) 
 
 #merge metadata with sample run data 
 merged_data <- all_data_flagged %>%
-  left_join(dionex_metadata_selected, by = c("sample_ID" = "Cl_SO4_ID"))
+  left_join(dionex_metadata, by = c("sample_ID" = "Cl_SO4_ID"))
+
 
 df_all_clean <- merged_data %>%
-  #filter(str_detect(Sample_Name, "GCW|GWI|MSM|SWH")) %>%
-  #mutate(Run_Time = lubridate::mdy_hm(Run_Time)) %>%
   separate(
     col = sample_name,
     sep = "_",
-    into = c("Sample_Number", "Site_Code", "Date" ,"Zone", "LysID", "Depth"),
+    into = c("Sample_Number", "Project", "Zone", "Grid", "Collection_Date"),
     remove = FALSE)
-
-############### THIS IS ONLY FOR 2023 when SWAMP was called UP and UPLAND was called UPCON ##############
-df_all_clean <- df_all_clean %>%
-  mutate(
-    Zone = case_when(
-      Site_Code == "SWH" & Zone == "UP" ~ "SWAMP",
-      Site_Code == "SWH" & Zone == "UPCON" ~ "UP",
-      TRUE ~ `Zone`
-    ))
 
 
 ```
@@ -1046,24 +1127,21 @@ df_all_clean <- df_all_clean %>%
 data_plotting <- df_all_clean
 
 #Order by Zone from Upland to Surface Water
-data_plotting$Zone = factor(data_plotting$Zone, levels = c("UP",  "SWAMP", "TR", "WC", "SW"))
+data_plotting$Zone = factor(data_plotting$Zone, levels = c("C", "FW", "SW"))
 data_plotting <- data_plotting[order(data_plotting$Zone), ]
 
 #group the data for plotting
 data_plotting <- data_plotting %>%
-  group_by(Site_Code) %>%
   mutate(row_num = factor(row_number())) %>%  # create row_num as factor per group
   ungroup()
 
 #Plot data and change colors based on Zone:
 viz_cl_plot <- ggplot(data_plotting, aes(x = row_num, y = Cl_ppm, fill = Zone)) +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single")) +
-  facet_grid(~ Site_Code, scales="free_x") +
+  facet_wrap(~ Zone, scales="free") +
   scale_fill_manual(values = c(
-    "UP" = "#20063B",
-    "SWAMP" = "darkgrey",
-    "TR" = "#FFBC42",
-    "WC" = "#419973",
+    "C" = "#20063B",
+    "FW" = "#FFBC42",
     "SW" = "#25ABE6"
   )) +
   theme_classic() +
@@ -1074,12 +1152,10 @@ viz_cl_plot <- ggplot(data_plotting, aes(x = row_num, y = Cl_ppm, fill = Zone)) 
 
 viz_so4_plot <-  ggplot(data_plotting, aes(x = row_num, y = SO4_ppm, fill = Zone)) +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single")) +
-  facet_grid(~ Site_Code, scales="free_x") +
+  facet_wrap(~ Zone, scales="free") +
   scale_fill_manual(values = c(
-    "UP" = "#20063B",
-    "SWAMP" = "darkgrey",
-    "TR" = "#FFBC42",
-    "WC" = "#419973",
+    "C" = "#20063B",
+    "FW" = "#FFBC42",
     "SW" = "#25ABE6"
   )) +
   theme_classic() +
@@ -1101,8 +1177,6 @@ ggarrange(viz_cl_plot, viz_so4_plot, nrow=2, ncol=1)
   #create required ID columns in R, etc. 
 final_data <- df_all_clean %>% 
   mutate(
-    Project = "COMPASS: Synoptic",   # new column with same value on every row
-    Region = "CB",
     Run_notes = run_notes,     # new column with notes about the run
     Analysis_rundate = print(Date_Run)
   ) 
@@ -1111,12 +1185,8 @@ colnames(final_data)
 
 final_data <- final_data %>%
   rename(
-    Time = Time..24hr.,
-    Time_Zone = Time.Zone_EDT.EST,
-    Replicate = Lysimeter,
     Sample_ID = sample_ID,
-    Field_notes = Field.Notes,
-    Site = Site_Code
+    Field_notes = Notes,
     # add more rename pairs as needed
   ) %>%
   select(
