@@ -46,8 +46,13 @@ Sys.setenv(TZ = "America/New_York")
   Date_Run = "2025-08-13"  #Date that instrument was run
   Run_by = "Zoe Read"  #Instrument user 
   Script_run_by = "Zoe Read" #Code user 
-  run_notes = "Check standard 1 is low for SO4. 
-  Some sample IDs are missing from metadata: TMP_SW_B4_20240426_15CM, TMP_SW_B4_20240711_15CM, TMP_SW_F6_20241111_15CM
+  run_notes = "Check standard 1 is low for SO4, so <80% of Sulfate Check 
+  Standards are within range of expected concentration. The peaks look uniform, 
+  so I'm not sure why the standard is low. 
+  Some sample IDs are missing from metadata: 
+  TMP_SW_B4_20240426_15CM
+  TMP_SW_B4_20240711_15CM
+  TMP_SW_F6_20241111_15CM
   " #any notes from the run
 
 ###### File Names - PLEASE CHANGE 
@@ -59,10 +64,6 @@ Sys.setenv(TZ = "America/New_York")
   processed_file_name = "Processed Data/COMPASS_TEMPEST_Processed_Cl_SO4_202404-202412.csv" 
 
 ###### Log Files - PLEASE CHECK 
-# #downloaded metadata csv - downloaded from Google drive as csv for this year
-#   ####Is there TEMPEST metadata?####
-#   Raw_Metadata_Lys = "Raw Data/TEMPEST_PorewaterInventory_May2022_Present_Lysimeters.csv"
-#   Raw_Metadata_SW = "Raw Data/TEMPEST_PorewaterInventory_May2022_Present_SourceWater.csv"
 
 #qaqc log file path for this year copied over from COMPASS GitHub
   Log_path = "Raw Data/COMPASS_Synoptic_Cl_SO4_QAQClog_2024.csv"
@@ -116,14 +117,15 @@ Sys.setenv(TZ = "America/New_York")
 ```
 
 ## Pull in active porewater tracking inventory sheet from Google Drive: 
-```{r rest of metadata}
+```{r rest of metadata, include=FALSE}
 
-inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
-
-drive_download(inventory_directory, overwrite = TRUE)
-
-sheet_names <- excel_sheets("TEMPEST_PorewaterInventory_May2022_Present.xlsx")
-sheet_names
+##Run these to pull the TEMPEST porewater metadata into GitHub if not already there
+# inventory_directory <- "https://docs.google.com/spreadsheets/d/1sFWq-WKhemPzbOFInqhCu_Lx0lsO6a_Z/edit#gid=496164093"
+# 
+# drive_download(inventory_directory, overwrite = TRUE)
+# 
+# sheet_names <- excel_sheets("TEMPEST_PorewaterInventory_May2022_Present.xlsx")
+# sheet_names
 
 raw_metadata_lys <- read_excel("TEMPEST_PorewaterInventory_May2022_Present.xlsx", sheet = "Porewater - Individual", skip = 3)
 
@@ -170,7 +172,7 @@ raw_metadata_lys_monmon <- raw_metadata_lys_monmon %>%
 #combine event and non-event samples 
 raw_metadata_lys_combined <- rbind(raw_metadata_lys_event, raw_metadata_lys_monmon)
 raw_metadata_lys_combined <- raw_metadata_lys_combined %>%
-  select("Sample_ID", "Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Collection_Date", "Event_Time", "Time_of_day", "Volume_mL")
+  select("Sample_ID", "Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Collection_Date", "Event_Time", "Time_of_day", "Volume_mL", "Notes")
 
 
 #create IDs from what was collected for comparison later
@@ -219,7 +221,8 @@ raw_metadata_sw_sw <- raw_metadata_sw_sw %>%
 #combine rw and sw samples 
 raw_metadata_sw_combined <- rbind(raw_metadata_sw_rw, raw_metadata_sw_sw)
 raw_metadata_sw_combined <- raw_metadata_sw_combined %>%
-  select("Sample_ID", "Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Collection_Date", "Event_Time", "Time_of_day", "Volume_mL")
+  rename("Notes" = "Notes:") %>%
+  select("Sample_ID", "Project", "Zone", "Source" ,"Grid", "Depth", "Analyte", "Collection_Date", "Event_Time", "Time_of_day", "Volume_mL", "Notes")
 
 #change "Source" to "Sourcewater" 
 raw_metadata_sw_combined$Source <- replace(raw_metadata_sw_combined$Source, raw_metadata_sw_combined$Source == "Source", "SourceWater")
@@ -303,7 +306,16 @@ all_dat <- all_dat_merge %>%
   mutate(across(c(SO4_ppm, Cl_ppm), ~ replace(.x, .x<0, 0)), 
          across(c(SO4_area, Cl_area), ~ replace(.x, .x<0, 0)))
 
-head(all_dat)
+#remove sample_name column
+all_dat$sample_name <- NULL
+
+#change TEMPEST to TMP
+####Add date to Rainwater Samples####
+all_dat <- all_dat %>%
+  mutate(sample_ID = str_replace(sample_ID, "TEMPEST", "TMP"))  %>%
+  mutate(sample_ID = str_replace(sample_ID, "RAINWATER_202412", "RAINWATER_20241212"))
+
+# head(all_dat)
 
 ```
 
@@ -709,15 +721,15 @@ if (so4_blks_percent <= chks_flag) {
 ## Assess Duplicates 
 ```{r Check Duplicates, echo=FALSE}
 
-#pull out any rows that have "dup" in the sample_name column
+#pull out any rows that have "dup" in the sample_ID column
 dups <- all_dat %>%  
-  select(!c(sample_name, sample_type, SO4_area, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag)) %>%
+  select(!c(sample_type, SO4_area, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag)) %>%
   filter(str_detect(sample_ID, "DUP"))      #have to change this to match data
 
 #create a new dataframe and remove dups from sample dataframe 
 dat_raw2 <- all_dat %>%  
   filter(!str_detect(sample_ID, "DUP")) %>%  
-  select(!c(sample_name, sample_type, SO4_area, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag))
+  select(!c(sample_type, SO4_area, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag))
 
 #remove the dup from these IDs so we will have duplicate sample names
 dups <- dups %>%
@@ -891,7 +903,7 @@ all_dat$salinity <- ((1.8070 * all_dat$Cl_ppm) + 0.026) / 1000
 #Need to determine dilution factors for your samples
 #for TEMPEST this depends on the sample so... 
 all_dat$Dilution <- 1
-all_dat$Dilution <-  ifelse(str_detect(all_dat$sample_ID, "TEMPEST"), 50, all_dat$Dilution)
+all_dat$Dilution <-  ifelse(str_detect(all_dat$sample_ID, "TMP"), 50, all_dat$Dilution)
 all_dat$Dilution <-  ifelse(str_detect(all_dat$sample_ID, "EST_SourceWater"), 100, all_dat$Dilution)
 all_dat$Dilution <-  ifelse(str_detect(all_dat$sample_ID, "SW_SourceWater"), 100, all_dat$Dilution)
 
@@ -905,14 +917,14 @@ all_dat$Dilution <-  ifelse(str_detect(all_dat$sample_ID, "SW_SourceWater"), 100
 
 #pull out any rows that have "spk" in the Sample ID column
 spks <- all_dat %>%  
-  select(!c(sample_name, sample_type, SO4_area, Cl_ppm, Cl_Conc_mM, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag, salinity, Dilution)) %>%
+  select(!c(sample_type, SO4_area, Cl_ppm, Cl_Conc_mM, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag, salinity, Dilution)) %>%
   filter(str_detect(sample_ID, "SPK"))      #have to change this to match data
 # head(spks)
 
 #create a new dataframe and remove dups from sample dataframe 
 dat_spks <- all_dat %>%  
   filter(!str_detect(sample_ID, "SPK")) %>%  
-  select(!c(sample_name, sample_type, SO4_area, Cl_ppm,  Cl_Conc_mM, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag, salinity))
+  select(!c(sample_type, SO4_area, Cl_ppm,  Cl_Conc_mM, Cl_area, Cl_QAQC_flag, SO4_QAQC_flag, salinity))
 
 #remove the dup from these IDs so we will have duplicate sample names
 spks <- spks %>%
@@ -1032,7 +1044,7 @@ dat_flagged <- dat_flagged %>%
 
 
 #Plot data and change colors based on flags to check it: 
-cl_samples_flag <-  ggplot(data = dat_flagged, aes(x = sample_name, y = Cl_ppm_dil, fill=Cl_Conc_flag)) +
+cl_samples_flag <-  ggplot(data = dat_flagged, aes(x = sample_ID, y = Cl_ppm_dil, fill=Cl_Conc_flag)) +
        geom_bar(stat = 'identity') + 
         scale_fill_manual(values = c("bdl" = "darkblue", "adl" = "red", "Within_Range" = "darkgreen")) +
         theme_classic() + labs(x= " ", y="Cl (diluted ppm)", title="Cl: Green = Within Range of Curve") + 
@@ -1040,7 +1052,7 @@ cl_samples_flag <-  ggplot(data = dat_flagged, aes(x = sample_name, y = Cl_ppm_d
         theme(legend.position = "bottom") +
         theme(axis.text.x = element_blank())
 
-so4_samples_flag <-  ggplot(data = dat_flagged, aes(x = sample_name, y = SO4_ppm_dil, fill=SO4_Conc_flag)) +
+so4_samples_flag <-  ggplot(data = dat_flagged, aes(x = sample_ID, y = SO4_ppm_dil, fill=SO4_Conc_flag)) +
        geom_bar(stat = 'identity') + 
         scale_fill_manual(values = c("bdl" = "darkblue", "adl" = "red", "Within_Range" = "darkgreen")) +
         theme_classic() + labs(x= " ", y="SO4 (diluted ppm)", title="SO4: Green = Within Range of Curve") + 
@@ -1078,19 +1090,9 @@ all_data_flagged <- dat_flagged %>%
   mutate(sample_ID = sub("^[^_]+_", "", sample_ID))
   #select(!Excess_Info)
 
-#change TEMPEST to TMP
-all_data_flagged <- all_data_flagged %>%
-  mutate(sample_ID = str_replace(sample_ID, "TEMPEST", "TMP"))
-
 #check to see if all samples are present in the metadata 
 all_data_flagged$sample_ID <- toupper(all_data_flagged$sample_ID)
 dionex_metadata$Cl_SO4_ID <- toupper(dionex_metadata$Cl_SO4_ID)
-
-####Add date to Rainwater Samples####
-all_data_flagged$sample_ID <- replace(all_data_flagged$sample_ID, all_data_flagged$sample_ID == "TMP_SW_RAINWATER_202412", "TMP_SW_RAINWATER_20241212")
-all_data_flagged$sample_ID <- replace(all_data_flagged$sample_ID, all_data_flagged$sample_ID == "TMP_FW_RAINWATER_202412", "TMP_FW_RAINWATER_20241212")
-all_data_flagged$sample_ID <- replace(all_data_flagged$sample_ID, all_data_flagged$sample_ID == "TMP_C_RAINWATER_202412", "TMP_C_RAINWATER_20241212")
-
 
 all_present <- all(all_data_flagged$sample_ID %in% dionex_metadata$Cl_SO4_ID)
 
@@ -1112,9 +1114,9 @@ merged_data <- all_data_flagged %>%
 
 df_all_clean <- merged_data %>%
   separate(
-    col = sample_name,
+    col = sample_ID,
     sep = "_",
-    into = c("Sample_Number", "Project", "Zone", "Grid", "Collection_Date"),
+    into = c("Project", "Zone", "Grid", "Collection_Date", "Depth"),
     remove = FALSE)
 
 
@@ -1187,11 +1189,12 @@ final_data <- final_data %>%
   rename(
     Sample_ID = sample_ID,
     Field_notes = Notes,
+    Depth_cm = Depth
     # add more rename pairs as needed
   ) %>%
   select(
-    Project, Region, Site, Zone, Replicate, Depth_cm, 
-         Sample_ID, Year, Month, Day, Time, Time_Zone,
+    Project, Sample_ID, Zone, Grid, Depth_cm, Event_Time, Time_of_day, 
+         Source, Volume_mL, Collection_Date, 
          SO4_Conc_mM, SO4_Conc_flag, SO4_QAQC_flag, Cl_Conc_mM, Cl_Conc_flag, Cl_QAQC_flag, salinity,
          Analysis_rundate,  Run_notes, Field_notes
         # list columns in the order you want them
