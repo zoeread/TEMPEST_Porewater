@@ -1,5 +1,5 @@
 Inj.	Injection Name	Type 	Ret.Time	Amount	Rel.Area 	Area	Height
-No.	Selected Peak:		min	µg/mL	%	µS*min	µS
+No.	Selected Peak:		min	Âµg/mL	%	ÂµS*min	ÂµS
 			CD	CD	CD	CD	CD
 			IC-Cl	IC-Cl	IC-Cl	IC-Cl	IC-Cl
 1	Lab Blank	Unknown	n.a.	n.a.	n.a.	n.a.	n.a.
@@ -58,7 +58,7 @@ No.	Selected Peak:		min	µg/mL	%	µS*min	µS
 54	Lab Blank	Unknown	n.a.	n.a.	n.a.	n.a.	n.a.
 55	32_TEMPEST_SW_B4_20240612_15cm_T-2	Unknown	3.307	2628.8968	81.19	60.8513	522.37
 56	33_TEMPEST_SW_I5_20240612_15cm_T-2	Unknown	3.313	1315.5993	73.89	30.4523	265.98
-57	34_TEMPEST_SW_E3_20240612_15cm_T-2	Unknown	3.317	1019.1079	71.15	23.0545	201.6
+57	34_TEMPEST_SW_E3_20240612_15cm_T-2	Unknown	3.317	996.0007	71.15	23.0545	201.6
 58	35_TEMPEST_FW_H6_20240612_15cm_T-3	Unknown	3.32	3.6516	0.99	0.0845	0.81
 59	36_TEMPEST_FW_D5_20240612_15cm_T-3	Unknown	3.327	5.4187	1.33	0.1254	1.18
 60	37_TEMPEST_FW_I5_20240612_15cm_T-3	Unknown	3.33	4.4949	1.03	0.104	0.99
@@ -108,8 +108,8 @@ No.	Selected Peak:		min	µg/mL	%	µS*min	µS
 104	69_TEMPEST_SW_F4_20240613_15cm_T-5	Unknown	3.31	2215.4309	79.09	51.2807	439.78
 105	70_TEMPEST_SW_H6_20240613_15cm_T-5	Unknown	3.31	2234.979	79.56	51.7332	444.08
 106	70_TEMPEST_SW_H6_20240613_15cm_T-5_DUP	Unknown	3.31	2211.4873	79.5	51.1895	439.21
-107	71_TEMPEST_SW_C3_20240613_15cm_T-5	Unknown	3.307	3306.6112	82.36	67.3161	575.63
-108	71_TEMPEST_SW_C3_20240613_15cm_T-5_SPK	Spiked	3.307	3367.7347	80.87	68.5604	585.86
+107	71_TEMPEST_SW_C3_20240613_15cm_T-5	Unknown	3.307	2908.1893	82.36	67.3161	575.63
+108	71_TEMPEST_SW_C3_20240613_15cm_T-5_SPK	Spiked	3.307	2961.9479	80.87	68.5604	585.86
 109	Lab Blank	Unknown	n.a.	n.a.	n.a.	n.a.	n.a.
 110	Standard 1	Check Standard	3.323	4.8079	93.77	5.5645	49.46
 111	Standard 2	Check Standard	3.323	9.7906	93.23	11.3312	99.71
@@ -118,8 +118,8 @@ No.	Selected Peak:		min	µg/mL	%	µS*min	µS
 114	Standard 5	Check Standard	3.297	200.0327	92.73	231.5086	1926.24
 115	Lab Blank	Unknown	n.a.	n.a.	n.a.	n.a.	n.a.
 116	Lab Blank	Unknown	n.a.	n.a.	n.a.	n.a.	n.a.
-Maximum			3.33	3367.7347	93.77	231.6216	1929.92
-Average			3.315	749.5767	41.92	28.2888	241.03
+Maximum			3.33	3133.1101	93.77	231.6216	1929.92
+Average			3.315	741.3036	41.92	28.2888	241.03
 Minimum			3.157	0.2529	-0.04	-0.0147	0
-Standard Deviation			0.019	1090.6157	41.38	46.0944	386.82
-Relative Standard Deviation			0.58%	145.50%	98.70%	162.94%	160.48%
+Standard Deviation			0.019	1072.6022	41.38	46.0944	386.82
+Relative Standard Deviation			0.58%	144.69%	98.70%	162.94%	160.48%
