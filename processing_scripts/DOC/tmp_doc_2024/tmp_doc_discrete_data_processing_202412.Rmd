@@ -17,7 +17,8 @@ cat("Run Information")
   Date_Run = "12/18/24"
   Run_by = "Stephanie J. Wilson"
   Script_run_by = "Stephanie J. Wilson"
-  run_notes = " "
+  run_notes = " SW_F4 is SW_F6 changed in this code. Rain water samples also
+    collected, these are output to a separate file in processed data"
   
   #file path and name for summary file 
     raw_file_name = "tmp_doc_raw_data_2024/TMP_202412.txt" 
@@ -25,6 +26,7 @@ cat("Run Information")
     raw_allpeaks_name = "tmp_doc_raw_data_2024/TMP_202412_allpeaks.txt"
   #file path and name for processed data after QAQC
     processed_file_name = "tmp_doc_processed_data_2024/TMP_PW_DOC_Processed_202412.csv"
+    processed_rain_data = "tmp_doc_processed_data_2024/TMP_RAIN_DOC_Processed_202412.csv"
 
 #check standard concentrations - Update if running different checks: 
    chk_std_c = 50
@@ -156,6 +158,16 @@ dat_raw <- raw_file_name %>%
   map_df(read_data) %>% 
   filter(grepl("TMP", sample_name)) %>% # filter to TMP samples only
   bind_rows() 
+
+#new addition just for this month 
+#we have a sample that was labeled incorrectly by accident, but we realized it
+#SW-F4 should be SW-F6, metadata confirm that we did not collect enough water from 
+#F4 for there to be a DOC sample, but F6 got a full compliment and there was no DOC sample
+#we have determined that F4 is therefore F6 and that is changed here 
+
+dat_raw <- dat_raw %>%
+  mutate(sample_name = ifelse(sample_name == "TMP_SW_F4_20241213", 
+                              "TMP_SW_F6_20241213", sample_name))
 
 head(dat_raw)
 ```
@@ -801,7 +813,7 @@ merged_data <- dat_flagged %>%
 
 ```
 
-## Export Processed Data  
+## Export PW Processed Data  
 ```{r, Export Processed Data, echo=FALSE}
 
 cat("Export Processed Data")
@@ -817,7 +829,9 @@ final_data <- merged_data %>%
     #Experiment = "TEMPEST",
     Depth_cm = 15,
     Run_notes = run_notes     # new column with notes about the run
-  ) 
+  ) %>% 
+  filter(!str_detect(sample_name, "Well")) %>%  
+  filter(!str_detect(sample_name, "Rain"))
 
 #this needs altered to match the tempest metadata and clean up 
 final_data <- final_data %>%
@@ -839,6 +853,60 @@ head(final_data)
 
 #will put final data in processed data folder 
   write.csv(final_data, processed_file_name)
+
+
+```
+
+## Export Processed Rain Data  
+```{r, Export Processed Rain Data, echo=FALSE}
+
+cat("Export Processed Rain Data")
+
+#Prepare data to be exported - if there is anything else to add 
+#Add any necessary identifiers to the samples  ### VERY IMPORTANT AND STANDARD FOR PROJECT ####
+  #example read in sample IDs list and merge 
+  #create required ID columns in R, etc. 
+final_data1 <- dat_florplot %>% 
+  filter(str_detect(sample_name, "Rain")) %>%
+  #select(Project, Plot, grid, sample_name, Vial_ID, date, ) %>%
+  mutate(
+    Project = "COMPASS: TEMPEST",
+    sample_type = "DOC",# new column with same value on every row
+    #Experiment = "TEMPEST",
+    #Depth_cm = 15,
+    plot = Plot,
+    Type = Grid_Square,
+    Vial_ID = sample_name,
+    date = Date,
+    Run_notes = run_notes     # new column with notes about the run
+  )  
+  
+#convert npoc and tdn from mg/L to uMoles/L 
+final_data1 <- final_data1 %>%
+  mutate(
+    npoc_uM = (((as.numeric(final_data1$npoc_raw))/Con1)/mw_c)*Con2, 
+    tdn_uM = (((as.numeric(final_data1$tdn_raw))/Con1)/mw_n)*Con2
+  )
+
+#this needs altered to match the tempest metadata and clean up 
+final_data1 <- final_data1 %>%
+  rename(
+    npoc_mgL = npoc_raw, 
+    tdn_mgL = tdn_raw,
+    Analysis_runtime = run_datetime, 
+    # add more rename pairs as needed
+  ) %>%
+  select(
+    Project, plot, Type, sample_type, Vial_ID, date, 
+    npoc_mgL, npoc_uM, npoc_flag, tdn_mgL, tdn_uM, tdn_flag, Analysis_runtime,
+    Run_notes
+    # list columns in the order you want them
+  )
+
+head(final_data1)
+
+#will put final data in processed data folder 
+  write.csv(final_data1, processed_rain_data)
 
 
 ```
