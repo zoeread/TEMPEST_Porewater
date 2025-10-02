@@ -7,9 +7,9 @@ output: html_document
 
 This file imports files from generates a yearly DOC/TN data file at L1. 
 Outputs from this script are:
-1) one L1 file per year per sample type (Lysimeter grids, pooled, source waters)
+1) one L1 file per year per sample type (Lysimeter grids, pooled, source waters) steph did already 
 2) weighted DOC values of pooled samples for SPE 
-3) add in collection level metadata (evacuation dates etc)
+3) add in collection level metadata (evacuation dates etc) steph did already 
 
 File naming: SITE_SAMPLETYPE_ORG_ANALYSISTYPE_YEAR_LEVEL.csv 
 Include ORG only if applicable 
@@ -76,8 +76,8 @@ clean_2024 <- all_2024 %>%
          tdn_mg_l = tdn_mgL,
          doc_flag = npoc_flag) %>%
   select(date, Project, plot, grid, sample_name, evacuation_datetime, collection_datetime, tz, doc_mg_l, tdn_mg_l, doc_flag, tdn_flag)
-  ## Note, talk to steph if we want to include the mM or not of DOC
-  # Also discuss if we want to code in the "lysimeter empty" flag for samples without DOC concentrations 
+  ## Note, talk to steph if we want to include the mM or not of DOC -- keep for ESS-DIVE 
+  # Also discuss if we want to code in the "lysimeter empty" flag for samples without DOC concentrations  -
   
 write_csv(clean_2024, paste0(folder_2024, "01_TMP_PW_NPOCTDN_2024_L1.csv") )#note this is currently set up so that it writes into the folder youre pulling data from so if you run script more than once it will pull in the old file.
 
